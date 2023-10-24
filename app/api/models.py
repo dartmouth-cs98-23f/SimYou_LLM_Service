@@ -8,6 +8,8 @@ class Agent(BaseModel):
     status: str
     memories: List[str]
 
+
+# Conversation ID?
 class Query(BaseModel):
     agent_id: int
     prompt: str

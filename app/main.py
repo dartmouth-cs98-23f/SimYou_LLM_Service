@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 
-from app.api.agents import agents
+from api.agents import agents
 
 app = FastAPI()
 app.include_router(agents)

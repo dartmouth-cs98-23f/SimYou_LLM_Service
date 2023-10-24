@@ -16,9 +16,11 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.vectorstores import FAISS
 
-from models import Agent
+from api.models import Agent
 
-
+"""
+TOOD: Move these so they're not poluting the name space
+"""
 def relevance_score_fn(score: float) -> float:
     """Return a similarity score on a scale [0, 1]."""
     # This will differ depending on a few things:

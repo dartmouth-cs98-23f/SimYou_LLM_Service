@@ -1,7 +1,7 @@
 #~/movie-service/app/api/movies.py
 
-from app.api.models import Agent, Query
-from app.api.gen_agent import GenerativeAgent
+from api.models import Agent, Query
+from api.gen_agent import GenerativeAgent
 
 from os import stat
 from typing import List
@@ -15,7 +15,7 @@ from langchain.chat_models import ChatOpenAI
 
 
 # TODO: Move this to non-local storage
-fake_genAgent_db = {
+agents_db = {
     1: Agent(name="Joe",
             age=19, traits="anxious, artistic, talkative",
             status="Joe is moving into Dartmouth college as a freshman", 
@@ -41,46 +41,21 @@ Road-map:
 
 agents = APIRouter()
 
-@agents.get('/', response_model=List[Agent])
-async def index():
-    return fake_genAgent_db
+@agents.get("/")
+def index() -> dict[str, dict[int, Agent]]:
+    return {"agents" : agents_db}
 
-#TODO: also takes an agent ID as input
-@agents.get('/prompt/{query}', response_model=str)
-def get_response(query = Query):
-    print("YOOO")
-    if query.agent_id not in fake_genAgent_db:
-        raise HTTPException(status_code=404, detail="Movie with given id not found")
+#TODO: Should this be a GET or a POST?
+@agents.get('/prompt/')
+def get_response(agentID: int, query: str):
     
+    if agentID not in agents_db.keys():
+        raise HTTPException(status_code=404, detail="GenerativeAgent with id not found")
     load_dotenv(find_dotenv())
     LLM = ChatOpenAI(max_tokens=1500)  # Can be any LLM you want.
-    agent = GenerativeAgent(fake_genAgent_db[query.agent_id], LLM)
-    return agent.interview_agent(query.prompt)
 
-
-
-
-
-
-# @agents.post('/', status_code=201)
-# async def add_movie(payload: Agent):
-#     movie = payload.dict()
-#     fake_movie_db.append(movie)
-#     return {'id': len(fake_movie_db) - 1}
-
-# @agents.put('/{id}')
-# async def update_movie(id: int, payload: Movie):
-#     movie = payload.dict()
-#     movies_length = len(fake_movie_db)
-#     if 0 <= id <= movies_length:
-#         fake_movie_db[id] = movie
-#         return None
-#     raise HTTPException(status_code=404, detail="Movie with given id not found")
-
-# @agents.delete('/{id}')
-# async def delete_movie(id: int):
-#     movies_length = len(fake_movie_db)
-#     if 0 <= id <= movies_length:
-#         del fake_movie_db[id]
-#         return None
-#     raise HTTPException(status_code=404, detail="Movie with given id not found")
+    #TODO: Get this part working
+    # agent = GenerativeAgent(agents[agentID], LLM)
+    # return agent.interview_agent(query.prompt)
+    return {"id" : agentID, "query" : query}
+    
