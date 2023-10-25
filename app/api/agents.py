@@ -1,5 +1,4 @@
-#~/movie-service/app/api/movies.py
-
+from crypt import methods
 from api.models import Agent, Query
 from api.gen_agent import GenerativeAgent
 
@@ -9,9 +8,6 @@ from fastapi import HTTPException, APIRouter, Header
 
 from dotenv import load_dotenv, find_dotenv
 from langchain.chat_models import ChatOpenAI
-
-
-
 
 
 # TODO: Move this to non-local storage
@@ -41,14 +37,32 @@ Road-map:
 
 agents = APIRouter()
 
-@agents.get("/")
-def index() -> dict[str, dict[int, Agent]]:
+# GET for all agents in database
+@agents.get("/api/agents")
+def get_agents():
     return {"agents" : agents_db}
 
-#TODO: Should this be a GET or a POST?
-@agents.get('/prompt/')
-def get_response(agentID: int, query: str):
-    
+# POST to create a new agent
+@agents.post('/api/agents')
+def add_agent(agentID: int, name: str, age: int, traits: str, status: str):
+    agents_db[agentID] = Agent(name, age, traits, status)
+
+# PUT to modify an agent
+@agents.put('/api/agents')
+def modify_agent(agentID: int, name: str, age: int, traits: str, status: str):
+    agents_db[agentID].name = name
+    agents_db[agentID].age = age
+    agents_db[agentID].traits = traits
+    agents_db[agentID].status = status
+
+# DELETE to delete an agent by its ID
+@agents.delete('/api/agents')
+def delete_agent(agentID: int):
+    agents_db[agentID] = Agent()
+
+# POST to prompt an agent with a query
+@agents.post('/api/agents/prompt')
+def prompt_agent(agentID: int, query: str):
     if agentID not in agents_db.keys():
         raise HTTPException(status_code=404, detail="GenerativeAgent with id not found")
     load_dotenv(find_dotenv())

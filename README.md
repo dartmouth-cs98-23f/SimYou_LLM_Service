@@ -1,4 +1,7 @@
-# SimYou_LLM_Service
+# SimYou LLM Agent Microservice
+
+## Introduction
+Microservice for SimYou character dialouge. Utilizes OpenAI GPT 3 API.
 
 ## How to run
 
@@ -30,3 +33,12 @@ Note: If you get a ModuleNotFound error, it could be because your PYTHONPATH env
 below command in the base directory of the projcet:  
 
 `$ export PYTHONPATH=$PWD`
+
+## API Endpoints
+| HTTP Verbs | Endpoints | Action |
+| --- | --- | --- |
+| POST | /api/agents/ | Create a new agent |
+| PUT | /api/agents/ | Edit the attributes of an agent |
+| DELETE | /api/agents/ | Delete an agent |
+| POST | /api/agents/prompt | Prompt an agent |
+
