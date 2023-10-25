@@ -1,6 +1,6 @@
 from crypt import methods
-from api.models import Agent, Query
-from api.gen_agent import GenerativeAgent
+from .models import Agent, Query
+from .gen_agent import GenerativeAgent
 
 from os import stat
 from typing import List

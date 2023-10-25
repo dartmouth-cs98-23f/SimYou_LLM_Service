@@ -16,7 +16,7 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.vectorstores import FAISS
 
-from api.models import Agent
+from .models import Agent
 
 """
 TOOD: Move these so they're not poluting the name space
