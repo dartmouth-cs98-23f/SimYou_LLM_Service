@@ -1,75 +1,62 @@
-from crypt import methods
-from .models import Agent, Query
-from .gen_agent import GenerativeAgent
+import asyncio
+from typing import AsyncIterable
 
-from os import stat
-from typing import List
-from fastapi import HTTPException, APIRouter, Header
+from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 
 from dotenv import load_dotenv, find_dotenv
+from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.chat_models import ChatOpenAI
+from langchain.schema import HumanMessage
 
-
-# TODO: Move this to non-local storage
-agents_db = {
-    1: Agent(name="Joe",
-            age=19, traits="anxious, artistic, talkative",
-            status="Joe is moving into Dartmouth college as a freshman", 
-            memories=["Joe misses his parents and is very homesick", "Joe feels tired from driving so far", "Joe likes his new dorm room", "Joe is hungry"]
-    )
-}
-
-"""
-Questions:
- - When should we load our dotenv (should we have an initialization function? or should we have call it every time the backend is queried (probably not the latter))
- - How do we store our agents? Currently modeling in a form that could easily be stored in a SQL database -- load into a generative agent on-demand, rather than keeping
-        a bunch of generative agents in memory -- Could be slow, but it has the benefit of making our service stateless
- - How to use a vector-store that is indexed by agent so we don't have to rebuild a langchain generative agent every time we're queried.
-        - Idea here would be to store basic details related to an agent in basic database (relational could work, document-oriented could work too) and memories in a separate vector store. Is this slow?
-"""
-
-"""
-Road-map:
- - Test with locally stored agents
- - Test with a document-oriented database
- - Incorporate a vector-store -- research this
-"""
+from .models import Prompt
 
 agents = APIRouter()
 
 # GET for all agents in database
 @agents.get("/api/agents")
 def get_agents():
-    return {"agents" : agents_db}
+    return
 
 # POST to create a new agent
 @agents.post('/api/agents')
 def add_agent(agentID: int, name: str, age: int, traits: str, status: str):
-    agents_db[agentID] = Agent(name, age, traits, status)
-
+    return
 # PUT to modify an agent
 @agents.put('/api/agents')
 def modify_agent(agentID: int, name: str, age: int, traits: str, status: str):
-    agents_db[agentID].name = name
-    agents_db[agentID].age = age
-    agents_db[agentID].traits = traits
-    agents_db[agentID].status = status
-
+    return
 # DELETE to delete an agent by its ID
 @agents.delete('/api/agents')
 def delete_agent(agentID: int):
-    agents_db[agentID] = Agent()
+    return
 
-# POST to prompt an agent with a query
+# POST to prompt an agent with a prompt
 @agents.post('/api/agents/prompt')
-def prompt_agent(agentID: int, query: str):
-    if agentID not in agents_db.keys():
-        raise HTTPException(status_code=404, detail="GenerativeAgent with id not found")
+async def prompt_agent(prompt: Prompt) -> StreamingResponse:
     load_dotenv(find_dotenv())
-    LLM = ChatOpenAI(max_tokens=1500)  # Can be any LLM you want.
+    return StreamingResponse(streaming_request(prompt.prompt), media_type="text/event-stream")
 
-    #TODO: Get this part working
-    # agent = GenerativeAgent(agents[agentID], LLM)
-    # return agent.interview_agent(query.prompt)
-    return {"id" : agentID, "query" : query}
-    
+# Stream response generator
+async def streaming_request(prompt: str) -> AsyncIterable[str]:
+    """Generator for each chunk received from OpenAI as response"""
+    callback = AsyncIteratorCallbackHandler()
+    model = ChatOpenAI(
+        streaming=True,
+        verbose=True,
+        callbacks=[callback],
+    )
+
+    task = asyncio.create_task(
+        model.agenerate(messages=[[HumanMessage(content=prompt)]])
+    )
+
+    try:
+        async for token in callback.aiter():
+            yield token
+    except Exception as e:
+        print(f"Caught exception: {e}")
+    finally:
+        callback.done.set()
+
+    await task

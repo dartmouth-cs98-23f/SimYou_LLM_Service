@@ -7,16 +7,16 @@ Microservice for SimYou character dialouge. Utilizes OpenAI GPT 3 API.
 
 If you haven't already, download [Docker](https://docs.docker.com/get-docker/)
 
-Build the docker image
+Run
+`docker-compose up -d --build`
 
-`$ docker build -t myimage .`
+Navigate to this [link](http://localhost:8000)
 
-Start the docker container
+When finished, stop and remove the containers
+`docker compose down`
 
-`$ docker run -d --name mycontainer -p 80:80 myimage`
 
-
-## API Endpoints
+## API Endpoints (not up to date)
 | HTTP Verbs | Endpoints | Action |
 | --- | --- | --- |
 | POST | /api/agents/ | Create a new agent |

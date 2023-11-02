@@ -1,6 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 
+# potential agent model
 class Agent(BaseModel):
     name: str
     age: int
@@ -8,9 +9,8 @@ class Agent(BaseModel):
     status: str
     memories: List[str]
 
-
-# Conversation ID?
-class Query(BaseModel):
-    agent_id: int
+# model for the post request used to prompt the agent
+class Prompt(BaseModel):
+    agentID: str
     prompt: str
     

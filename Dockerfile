@@ -2,16 +2,16 @@
 FROM python:3.9
 
 # (2)
-WORKDIR /code
+WORKDIR /SIMYOU_LLM_SERVICE
 
 # (3)
-COPY ./requirements.txt /code/requirements.txt
+COPY ./requirements.txt /SIMYOU_LLM_SERVICE/requirements.txt
 
 # (4)
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /SIMYOU_LLM_SERVICE/requirements.txt
 
 # (5)
-COPY ./app /code/app
+COPY ./app /SIMYOU_LLM_SERVICE/app
 
 # (6)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
