@@ -20,7 +20,6 @@ load_dotenv(find_dotenv())
 chroma_url = os.getenv("CHROMA_DB")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# NOTE: We don't want to have to re-initialize this connection every time.
 chroma_client = chromadb.HttpClient(
     host = chroma_url,
     port="8000"
@@ -64,7 +63,7 @@ async def prompt_agent(prompt: Prompt) -> StreamingResponse:
     )
     # TODO: Make async
     new_mem = "PLACEHOLDER_FOR_NAME said to you: " + str(prompt.prompt)
-    chroma_manager.addMemory(agent_id=prompt.agentID, memory=new_mem)
+    chroma_manager.add_memory(agent_id=prompt.agentID, memory=prompt.prompt)
     return StreamingResponse(streaming_request(prompt.prompt), media_type="text/event-stream")
 
 # Stream response generator

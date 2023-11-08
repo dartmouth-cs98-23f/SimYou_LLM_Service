@@ -18,7 +18,7 @@ class ChromaClientWrapper:
         return datetime.datetime(int(year), int(month), int(day), int(hour), int(minute), int(second), int(ms))
 
 
-    def add_memory(self, agent_id: str, memory: str):
+    async def add_memory(self, agent_id: str, memory: str):
         '''
         Adds a memory to the collection belonging to the agent
         NOTE: might need to maintain another database to handle the memory IDs
