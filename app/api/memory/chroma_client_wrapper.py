@@ -52,7 +52,7 @@ class ChromaClientWrapper:
         self.client.delete_collection(agent_id)
 
 
-    async def retrieve_relevant_memories(self, agent_id: str, prompt: str, k=10, mem_boost_seconds_threshold=600, cutoff=.50):
+    async def retrieve_relevant_memories(self, agent_id: str, prompt: str, k=10, mem_boost_seconds_threshold=600, cutoff=1.50):
         '''
         Input: chroma client, agent_id, prompt, and k (how many memories you want to retrieve)
         Ouput: <= k most relevant memories
@@ -95,7 +95,7 @@ class ChromaClientWrapper:
         ret = []
         for mem in most_relevant:
             # Only keep memories with distance below cut-off
-            if mem[0] < cutoff:
+            if mem[0] * -1 < cutoff:
                 # Update last-touched
                 COLLECTION.upsert(ids=[mem[2]], documents=[mem[1]], metadatas=[{'last-touched': str(now)}])
 
