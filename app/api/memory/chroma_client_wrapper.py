@@ -37,6 +37,7 @@ class ChromaClientWrapper:
             documents=[memory],
             metadatas=[{'last-touched':str(now)}]
         )
+        
 
     def add_agent(self, agent_id: str):
         '''
@@ -44,9 +45,14 @@ class ChromaClientWrapper:
         Note -- eventually we might expand this implementation to include a core memory / stable traits
         '''
         self.client.get_or_create_collection(agent_id)
+    
+    def delete_agent(self, agent_id: str):
+        # Raises ValueError if the collection does not exist -- handle this so the operation 
+        # fails gracefully
+        self.client.delete_collection(agent_id)
 
 
-    def retrieve_relevant_memories(self, agent_id: str, prompt: str, k=10, mem_boost_seconds_threshold=600, cutoff=.50):
+    async def retrieve_relevant_memories(self, agent_id: str, prompt: str, k=10, mem_boost_seconds_threshold=600, cutoff=.50):
         '''
         Input: chroma client, agent_id, prompt, and k (how many memories you want to retrieve)
         Ouput: <= k most relevant memories

@@ -5,7 +5,7 @@ import requests
 
 def testRequest():
         url = "http://localhost:8000/api/agents/prompt"
-        message = "Hello, how are you?"
+        message = "What is 10 + 12?"
         agentID = "test"
         data = {"agentID": agentID,
                 "prompt": message}

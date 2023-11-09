@@ -44,40 +44,47 @@ def get_agents():
 # POST to create a new agent
 @agents.post('/api/agents')
 def add_agent(agentID: int, name: str, age: int, traits: str, status: str):
+    chroma_manager.add_agent(agent_id=agentID)
     return
+
 # PUT to modify an agent
 @agents.put('/api/agents')
 def modify_agent(agentID: int, name: str, age: int, traits: str, status: str):
     return
+
 # DELETE to delete an agent by its ID
 @agents.delete('/api/agents')
 def delete_agent(agentID: int):
+    chroma_manager.delete_agent(agent_id=agentID)
     return
 
 # POST to prompt an agent with a prompt
 @agents.post('/api/agents/prompt')
 async def prompt_agent(prompt: Prompt) -> StreamingResponse:
-    past_mems = chroma_manager.retrieve_relevant_memories(
+    mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
         agent_id=prompt.agentID,
         prompt=prompt.prompt
-    )
+    ))
+    await mems 
     # TODO: Make async
     new_mem = "PLACEHOLDER_FOR_NAME said to you: " + str(prompt.prompt)
-    chroma_manager.add_memory(agent_id=prompt.agentID, memory=prompt.prompt)
-    return StreamingResponse(streaming_request(prompt.prompt), media_type="text/event-stream")
+    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.agentID, memory=prompt.prompt))
+    return StreamingResponse(streaming_request(prompt.prompt, prompt.agentID), media_type="text/event-stream")
 
 # Stream response generator
-async def streaming_request(prompt: str) -> AsyncIterable[str]:
+async def streaming_request(prompt: str, agentID: str) -> AsyncIterable[str]:
     """Generator for each chunk received from OpenAI as response"""
     callback = AsyncIteratorCallbackHandler()
     model.callbacks = [callback]
     task = asyncio.create_task(
         model.agenerate(messages=[[HumanMessage(content=prompt)]])
     )
-    response = ""
+
+    response = []
     try:
         async for token in callback.aiter():
             yield token
+            response.append(token)
     except Exception as e:
         print(f"Caught exception: {e}")
     finally:
@@ -85,5 +92,6 @@ async def streaming_request(prompt: str) -> AsyncIterable[str]:
 
     await task
 
-    # TODO: Asynchronously add what agent_id said to the database
-    # 
+    new_mem = "You said to PLACEHOLDER: " + "".join(response)
+    asyncio.create_task(chroma_manager.add_memory(agent_id=agentID, memory=new_mem))
+
