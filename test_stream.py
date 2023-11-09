@@ -21,6 +21,5 @@ def testRequest():
                                print(chunk)
         except requests.exceptions.ChunkedEncodingError as ex:
                 print(f"Invalid chunk encoding {str(ex)}")
-
        
 testRequest()

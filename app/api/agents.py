@@ -1,17 +1,16 @@
 import asyncio
 from typing import AsyncIterable
 import chromadb
+import psycopg2
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-
 from dotenv import load_dotenv, find_dotenv
 import os
 
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
-
 from .models import Prompt
 from .memory.chroma_client_wrapper import ChromaClientWrapper
 
@@ -91,6 +90,43 @@ async def streaming_request(prompt: str, agentID: str) -> AsyncIterable[str]:
         new_mem = "You said to PLACEHOLDER: " + "".join(response)
         asyncio.create_task(chroma_manager.add_memory(agent_id=agentID, memory=new_mem))
         callback.done.set()
-
     await task
 
+# helper method to get the properly formatted gpt prompt
+def get_gpt_prompt(prompt, targetId, sourceId):
+    targetAgentDescription = get_agent_description(targetId)
+    sourceAgentDescription = get_agent_description(sourceId)
+    
+    gpt_prompt = """
+    You are a character with this description:
+    ${targetAgentDescription}
+
+    You have these memories:
+    ${}
+    
+    Another character has this description:
+    ${sourceAgentDescription}
+     
+    This character says this to you:
+    ${prompt} 
+    
+    Please reply in a concise and conversational manner!
+    """
+    return gpt_prompt
+
+# helper method to get the description for an agent with id agentID
+def get_agent_description(agentID):
+    # db connection string
+    conn = psycopg2.connect(dbname='simudb', user='alan', password='simudev', host='simudb.c7dymeo5dq31-us-east-2.rds.amazonaws.com', port='5432')
+    try:
+        cursor = conn.cursor()      
+        cursor.execute("SELECT description FROM users WHERE Id = %s;", agentID)
+        results = cursor.fetchone()
+        cursor.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print("no success", error)
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if results is not None:
+            return results
