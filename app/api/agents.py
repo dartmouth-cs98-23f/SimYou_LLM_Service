@@ -88,10 +88,9 @@ async def streaming_request(prompt: str, agentID: str) -> AsyncIterable[str]:
     except Exception as e:
         print(f"Caught exception: {e}")
     finally:
+        new_mem = "You said to PLACEHOLDER: " + "".join(response)
+        asyncio.create_task(chroma_manager.add_memory(agent_id=agentID, memory=new_mem))
         callback.done.set()
 
     await task
-
-    new_mem = "You said to PLACEHOLDER: " + "".join(response)
-    asyncio.create_task(chroma_manager.add_memory(agent_id=agentID, memory=new_mem))
 
