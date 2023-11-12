@@ -10,6 +10,9 @@ Create a `.env` file in the project directory. Add your OpenAI API key and the I
 ```
 CHROMA_DB="1.23.45.678"
 OPENAI_API_KEY="sk-EXAMPLE"
+GAME_DB_ADDRESS="blah-blah-blah.com"
+GAME_DB_PASS="password"
+GAME_DB_USER="user"
 ```
 
 If you haven't already, download [Docker](https://docs.docker.com/get-docker/)

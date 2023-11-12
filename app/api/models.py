@@ -5,6 +5,8 @@ class Prompt(pydantic.BaseModel):
     sourceAgentID: str
     targetAgentID: str
     prompt: str
+    msgID=""
+    responseID=""
 
 # Agent info object
 class AgentInfo:

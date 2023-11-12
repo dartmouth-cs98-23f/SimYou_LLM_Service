@@ -6,6 +6,8 @@ def testRequest():
     url = "http://localhost:8000/api/agents/prompt"
     message = "Who was George Washington's wife?"
     agentID = "a6d8ef44-9b33-4421-9526-69af615e22cb"
+    msgID = "a6d8ef44-9b33-4421-9526-69aoiaoifnf615"
+    responseID = "a6d8ef44-9b33-6492-9526-69af615e22cb"
     data = {"sourceAgentID": agentID,
     "targetAgentID": agentID,
     "prompt": message}
@@ -37,3 +39,9 @@ def testRequestWithStreaming():
 
 testRequest()
 testRequestWithStreaming()
+
+"""
+TODO: 
+[ ] Update README.md
+[ ] Look into keeping a persistent connection to Chroma
+"""

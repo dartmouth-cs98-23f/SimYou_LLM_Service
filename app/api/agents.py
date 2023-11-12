@@ -4,7 +4,7 @@ from typing import AsyncIterable
 import chromadb
 import psycopg2
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv, find_dotenv
 import os
@@ -18,7 +18,6 @@ from .memory.chroma_client_wrapper import ChromaClientWrapper
 
 load_dotenv(find_dotenv())
 chroma_url = os.getenv("CHROMA_DB")
-openai_api_key = os.getenv("OPENAI_API_KEY")
 
 chroma_client = chromadb.HttpClient(
     host = chroma_url,
@@ -33,6 +32,10 @@ model = ChatOpenAI(
     verbose=True,
     openai_api_key=secret_key
 )
+
+game_db_url = os.getenv("GAME_DB_ADDRESS")
+game_db_pass = os.getenv("GAME_DB_PASS")
+game_db_user = os.getenv("GAME_DB_USER")
 
 agents = APIRouter()
 
@@ -61,17 +64,21 @@ async def prompt_agent(prompt: Prompt):
     await source_agent_info
     await target_agent_info
 
+    if not source_agent_info.result():
+        raise HTTPException(status_code=400, detail=f"Bad source agent id: {prompt.sourceAgentID}")
+    if not target_agent_info.result():
+        raise HTTPException(status_code=400, detail=f"Bad target agent id: {prompt.targetAgentID}")
+
     gpt_prompt = get_gpt_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
     new_mem = source_agent_info.result().firstName + " " + source_agent_info.result().lastName + " said to you: " + str(prompt.prompt)
-    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem))
+    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem, unique_id=prompt.msgID))
 
     gpt = asyncio.create_task(
         model.apredict(gpt_prompt)
     )
     await gpt
-    print(gpt.result())
     new_mem = "You said to " + source_agent_info.result().firstName + " " + source_agent_info.result().lastName + ": " + "".join(gpt.result())
-    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem))
+    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem, unique_id=prompt.responseID))
     return gpt.result()
 
 # POST to prompt an agent with a prompt and stream the response
@@ -87,13 +94,19 @@ async def prompt_agent_stream(prompt: Prompt) -> StreamingResponse:
     await source_agent_info
     await target_agent_info
 
+    if not source_agent_info.result():
+        raise HTTPException(status_code=400, detail=f"Bad source agent id: {prompt.sourceAgentID}")
+
+    if not target_agent_info.result():
+        raise HTTPException(status_code=400, detail=f"Bad target agent id: {prompt.targetAgentID}")
+
     gpt_prompt = get_gpt_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
     new_mem = source_agent_info.result().firstName + " " + source_agent_info.result().lastName + " said to you: " + str(prompt.prompt)
-    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem))
+    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem, unique_id=prompt.msgID))
     return StreamingResponse(streaming_request(gpt_prompt, prompt.targetAgentID, source_agent_info.result()), media_type="text/event-stream")
 
 # Stream response generator
-async def streaming_request(prompt: str, targetAgentID: str, sourceAgentInfo: AgentInfo) -> AsyncIterable[str]:
+async def streaming_request(prompt: str, targetAgentID: str, sourceAgentInfo: AgentInfo, responseID="") -> AsyncIterable[str]:
     """Generator for each chunk received from OpenAI as response"""
     callback = AsyncIteratorCallbackHandler()
     model.callbacks = [callback]
@@ -110,7 +123,7 @@ async def streaming_request(prompt: str, targetAgentID: str, sourceAgentInfo: Ag
         print(f"Caught exception: {e}")
     finally:
         new_mem = "You said to " + sourceAgentInfo.firstName + " " + sourceAgentInfo.lastName + ": " + "".join(response)
-        asyncio.create_task(chroma_manager.add_memory(agent_id=targetAgentID, memory=new_mem))
+        asyncio.create_task(chroma_manager.add_memory(agent_id=targetAgentID, memory=new_mem, unique_id=responseID))
         callback.done.set()
     await task
 
@@ -140,11 +153,12 @@ def get_gpt_prompt(message: str, targetAgentInfo: AgentInfo, sourceAgentInfo: Ag
 # Helper method to get the info for an agent with id agentID
 async def get_agent_info(agentID) -> AgentInfo:
     # db connection string
+    results = None
     conn = psycopg2.connect(
         dbname="demo",
-        user="alan",
-        password="simyoudev",
-        host="simudb.c7dymeo5dq31.us-east-2.rds.amazonaws.com"
+        user=game_db_user,
+        password=game_db_pass,
+        host=game_db_url
         )
     try:
         cursor = conn.cursor()      
@@ -159,7 +173,7 @@ async def get_agent_info(agentID) -> AgentInfo:
     except (Exception, psycopg2.DatabaseError) as error:
         print("no success", error)
     finally:
-        if cursor is not None:
+        if cursor:
             cursor.close()
-        if results is not None:
+        if results:
             return AgentInfo(results[0], results[1], results[2])
