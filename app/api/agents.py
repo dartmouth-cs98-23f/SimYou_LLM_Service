@@ -14,6 +14,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 from .models import Prompt, AgentInfo
 from .memory.chroma_client_wrapper import ChromaClientWrapper
+from .prompts import Prompts
 
 
 load_dotenv(find_dotenv())
@@ -69,7 +70,7 @@ async def prompt_agent(prompt: Prompt):
     if not target_agent_info.result():
         raise HTTPException(status_code=400, detail=f"Bad target agent id: {prompt.targetAgentID}")
 
-    gpt_prompt = get_gpt_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
+    gpt_prompt = Prompts.get_convo_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
     new_mem = source_agent_info.result().firstName + " " + source_agent_info.result().lastName + " said to you: " + str(prompt.prompt)
     asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem, unique_id=prompt.msgID))
 
@@ -100,7 +101,7 @@ async def prompt_agent_stream(prompt: Prompt) -> StreamingResponse:
     if not target_agent_info.result():
         raise HTTPException(status_code=400, detail=f"Bad target agent id: {prompt.targetAgentID}")
 
-    gpt_prompt = get_gpt_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
+    gpt_prompt = Prompts.get_convo_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
     new_mem = source_agent_info.result().firstName + " " + source_agent_info.result().lastName + " said to you: " + str(prompt.prompt)
     asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem, unique_id=prompt.msgID))
     return StreamingResponse(streaming_request(gpt_prompt, prompt.targetAgentID, source_agent_info.result()), media_type="text/event-stream")
@@ -126,29 +127,6 @@ async def streaming_request(prompt: str, targetAgentID: str, sourceAgentInfo: Ag
         asyncio.create_task(chroma_manager.add_memory(agent_id=targetAgentID, memory=new_mem, unique_id=responseID))
         callback.done.set()
     await task
-
-# Helper method to get the properly formatted gpt prompt
-def get_gpt_prompt(message: str, targetAgentInfo: AgentInfo, sourceAgentInfo: AgentInfo, targetAgentMemories: List[str]):
-    memories_str = ""
-    for mem in targetAgentMemories:
-        memories_str += mem
-        memories_str += "\n"
-    
-    gpt_prompt = f"""
-    You are a character with this description:
-    {targetAgentInfo.description}
-    
-    You have these memories:
-    {memories_str}
-
-    Another character with the name {sourceAgentInfo.firstName} {sourceAgentInfo.lastName} has this description:
-    
-    {sourceAgentInfo.firstName} {sourceAgentInfo.lastName} says this to you:
-    {message} 
-    
-    Please reply in a concise and conversational manner!
-    """
-    return gpt_prompt
 
 # Helper method to get the info for an agent with id agentID
 async def get_agent_info(agentID) -> AgentInfo:
