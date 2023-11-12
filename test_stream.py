@@ -12,6 +12,19 @@ def testRequest():
 
     headers = {"Content-type": "application/json"}
 
+    r = requests.post(url, data=json.dumps(data), headers=headers)
+    print(r.text)
+
+def testRequestWithStreaming():
+    url = "http://localhost:8000/api/agents/prompt/stream"
+    message = "Who was George Washington's wife?"
+    agentID = "a6d8ef44-9b33-4421-9526-69af615e22cb"
+    data = {"sourceAgentID": agentID,
+    "targetAgentID": agentID,
+    "prompt": message}
+
+    headers = {"Content-type": "application/json"}
+
     r = requests.post(url, data=json.dumps(data), headers=headers, stream=True)
     if r.status_code != 200:
         print("Error!")
@@ -23,3 +36,4 @@ def testRequest():
         print(f"Invalid chunk encoding {str(ex)}")
 
 testRequest()
+testRequestWithStreaming()

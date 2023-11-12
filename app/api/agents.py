@@ -50,7 +50,7 @@ def delete_agent(agentID: int):
 
 # POST to prompt an agent with a prompt
 @agents.post('/api/agents/prompt')
-async def prompt_agent(prompt: Prompt) -> StreamingResponse:
+async def prompt_agent(prompt: Prompt):
     mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
         agent_id=prompt.targetAgentID,
         prompt=prompt.prompt
@@ -62,7 +62,32 @@ async def prompt_agent(prompt: Prompt) -> StreamingResponse:
     await target_agent_info
 
     gpt_prompt = get_gpt_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
-    print(gpt_prompt)
+    new_mem = source_agent_info.result().firstName + " " + source_agent_info.result().lastName + " said to you: " + str(prompt.prompt)
+    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem))
+
+    gpt = asyncio.create_task(
+        model.apredict(gpt_prompt)
+    )
+    await gpt
+    print(gpt.result())
+    new_mem = "You said to " + source_agent_info.result().firstName + " " + source_agent_info.result().lastName + ": " + "".join(gpt.result())
+    asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem))
+    return gpt.result()
+
+# POST to prompt an agent with a prompt and stream the response
+@agents.post('/api/agents/prompt/stream')
+async def prompt_agent_stream(prompt: Prompt) -> StreamingResponse:
+    mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
+        agent_id=prompt.targetAgentID,
+        prompt=prompt.prompt
+    ))
+    source_agent_info = asyncio.create_task(get_agent_info(prompt.sourceAgentID))
+    target_agent_info = asyncio.create_task(get_agent_info(prompt.targetAgentID))
+    await mems
+    await source_agent_info
+    await target_agent_info
+
+    gpt_prompt = get_gpt_prompt(prompt.prompt, target_agent_info.result(), source_agent_info.result(), mems.result())
     new_mem = source_agent_info.result().firstName + " " + source_agent_info.result().lastName + " said to you: " + str(prompt.prompt)
     asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem))
     return StreamingResponse(streaming_request(gpt_prompt, prompt.targetAgentID, source_agent_info.result()), media_type="text/event-stream")
