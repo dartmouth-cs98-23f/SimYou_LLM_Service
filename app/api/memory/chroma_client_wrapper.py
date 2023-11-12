@@ -81,7 +81,6 @@ class ChromaClientWrapper:
             last_touched = self.dateTime_str_to_time(last_touched_str)
             time_elapsed = now - last_touched
 
-
             if time_elapsed.seconds <= mem_boost_seconds_threshold:
                 distance *= .80
 

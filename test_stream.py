@@ -1,25 +1,25 @@
 import json
 import requests
 
-# tests for the streaming api
-
+# Test for the streaming api
 def testRequest():
-        url = "http://localhost:8000/api/agents/prompt"
-        message = "Who was George Washington's wife?"
-        agentID = "test"
-        data = {"agentID": agentID,
-                "prompt": message}
+    url = "http://localhost:8000/api/agents/prompt"
+    message = "Who was George Washington's wife?"
+    agentID = "a6d8ef44-9b33-4421-9526-69af615e22cb"
+    data = {"sourceAgentID": agentID,
+    "targetAgentID": agentID,
+    "prompt": message}
 
-        headers = {"Content-type": "application/json"}
+    headers = {"Content-type": "application/json"}
 
-        r = requests.post(url, data=json.dumps(data), headers=headers, stream=True)
-        if r.status_code != 200:
-                print("Error!")
-        try:
-                for chunk in r.iter_content(1024):
-                        if chunk:
-                               print(chunk)
-        except requests.exceptions.ChunkedEncodingError as ex:
-                print(f"Invalid chunk encoding {str(ex)}")
-       
+    r = requests.post(url, data=json.dumps(data), headers=headers, stream=True)
+    if r.status_code != 200:
+        print("Error!")
+    try:
+        for chunk in r.iter_content(1024):
+            if chunk:
+                print(chunk)
+    except requests.exceptions.ChunkedEncodingError as ex:
+        print(f"Invalid chunk encoding {str(ex)}")
+
 testRequest()
