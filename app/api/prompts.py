@@ -8,7 +8,7 @@ class Prompts:
             memories_str += f"({i+1}) {targetAgentMemories[i]};\n"
         
         gpt_prompt = f"""
-        You are a character named {targetAgentInfo.firstName} {targetAgentInfo.lastName} with this description:
+        You are a character with the name {targetAgentInfo.firstName} {targetAgentInfo.lastName} this description:
         \'{targetAgentInfo.description}\'
         
         -----------------------------------------------------------------------------
