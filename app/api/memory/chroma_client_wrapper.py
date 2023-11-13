@@ -76,10 +76,15 @@ class ChromaClientWrapper:
 
         # Grab the agent's memory
         COLLECTION = self.client.get_or_create_collection(agent_id)
-
+        results = None
         # Query the agent with the prompt and get <= 20 most semantically relevant memories
         try:
             results = COLLECTION.query(query_texts=[prompt], n_results=20)
+        except Exception as e:
+            return []
+        finally:
+            if not results:
+                return []
             ids, documents, distances, metadatas = results['ids'][0], results['documents'][0], results['distances'][0], results['metadatas'][0]
 
             for i in range(len(ids)):
@@ -116,8 +121,7 @@ class ChromaClientWrapper:
 
             return ret
             
-        except ValueError as e:
-            return []
+
     
 
     # def summarizeCollection(self, collection_id: str, destination_id: str):

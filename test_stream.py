@@ -4,10 +4,8 @@ import requests
 # Test for the streaming api
 def testRequest():
     url = "http://localhost:8000/api/agents/prompt"
-    message = "Who was George Washington's wife?"
+    message = "What's your name?"
     agentID = "a6d8ef44-9b33-4421-9526-69af615e22cb"
-    msgID = "a6d8ef44-9b33-4421-9526-69aoiaoifnf615"
-    responseID = "a6d8ef44-9b33-6492-9526-69af615e22cb"
     data = {"sourceAgentID": agentID,
     "targetAgentID": agentID,
     "prompt": message}
@@ -19,7 +17,7 @@ def testRequest():
 
 def testRequestWithStreaming():
     url = "http://localhost:8000/api/agents/prompt/stream"
-    message = "Who was George Washington's wife?"
+    message = "What's your name?"
     agentID = "a6d8ef44-9b33-4421-9526-69af615e22cb"
     data = {"sourceAgentID": agentID,
     "targetAgentID": agentID,
