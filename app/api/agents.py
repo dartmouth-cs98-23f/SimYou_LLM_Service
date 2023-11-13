@@ -143,7 +143,7 @@ async def get_agent_info(agentID) -> AgentInfo:
         query = f"""
         SELECT \"FirstName\", \"LastName\", \"Description\"
         FROM \"Users\"
-        WHERE \"Id\" = \'{agentID}\'
+        WHERE \"UserId\" = \'{agentID}\'
         """
         cursor.execute(query)
         results = cursor.fetchall()[0]
