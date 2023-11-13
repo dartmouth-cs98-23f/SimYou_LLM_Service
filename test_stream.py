@@ -19,7 +19,7 @@ def testRequest():
 
 def testRequestWithStreaming():
     url = "http://localhost:8000/api/agents/prompt/stream"
-    message = "Who was George Washington's wife?"
+    message = "Hello! What is your name?"
     agentID = "a6d8ef44-9b33-4421-9526-69af615e22cb"
     data = {"sourceAgentID": agentID,
     "targetAgentID": agentID,

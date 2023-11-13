@@ -1,4 +1,3 @@
-from typing import List
 import asyncio
 from typing import AsyncIterable
 import chromadb
@@ -34,6 +33,7 @@ model = ChatOpenAI(
     openai_api_key=secret_key
 )
 
+game_db_name = os.getenv("GAME_DB_NAME")
 game_db_url = os.getenv("GAME_DB_ADDRESS")
 game_db_pass = os.getenv("GAME_DB_PASS")
 game_db_user = os.getenv("GAME_DB_USER")
@@ -133,7 +133,7 @@ async def get_agent_info(agentID) -> AgentInfo:
     # db connection string
     results = None
     conn = psycopg2.connect(
-        dbname="demo",
+        dbname=game_db_name,
         user=game_db_user,
         password=game_db_pass,
         host=game_db_url
@@ -144,7 +144,7 @@ async def get_agent_info(agentID) -> AgentInfo:
         SELECT \"FirstName\", \"LastName\", \"Description\"
         FROM \"Users\"
         WHERE \"Id\" = \'{agentID}\'
-        """      
+        """
         cursor.execute(query)
         results = cursor.fetchall()[0]
         cursor.close()
