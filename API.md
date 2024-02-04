@@ -4,7 +4,7 @@
 
 ## GameService to AI Service Communication
 
-### RelayChatToAgent
+### prompt
 
 #### Description
 
@@ -20,7 +20,8 @@
     "senderId": "GUID of sender",
     "recipientId": "GUID of recipient (agent you will get a response from)",
     "conversationID": "GUID of current conversation",
-    "stream": "true if the AI service should stream the response, false otherwise"
+    "streamResponse": "true if the AI service should stream the response, false otherwise",
+    "respondWithQuestion": "true if you want the AI to shake up convo by asking a question"
   }
   ```
 
@@ -30,14 +31,14 @@
 
   ```json
   {
-    "AgentResponderId": "ID of recipient who sent the message that triggered the response",
-    "userRecipientId": "ID of user who originally sent the message that triggered this incoming",
+    "responderID": "ID of recipient who sent the message that triggered the response",
+    "questyionerID": "ID of user who originally sent the message that triggered this incoming",
     "conversationID": "GUID of current conversation",
     "content": "AI-generated response"
   }
   ```
 
-### RelayEndOfConversation
+### endConversation
 
 #### Description 
 
@@ -90,7 +91,7 @@
   }
   ```
 
-### GenerateSummary
+### generatePersona
 
 #### Description
 
@@ -102,8 +103,8 @@
   ```json
   {
     "characterId": "GUID of user/agent",
-
-    "responses": [ {"question 1 content": ["response1 to q1", "response2 to q1"] }, {"question 2 content": ["response1 to q2", "response2 to q2" ] } ]
+    "questions": ["question 1", "question 2", "question 3"],
+    "answers": [["response to q1", "response to q1", ] ["response to q2", "response to q2", ], ["response to q3", "response to q3", ]]
   }
   ```
 
@@ -117,7 +118,7 @@
   }
   ```
 
-### GenerateWorldThumbnail
+### generateWorldThumbnail
 
 #### Description
 
@@ -142,39 +143,5 @@
   {
     "worldID": "GUID of user/agent",
     "photo": "URL to photo that GameService saves in back-end"
-  }
-  ```
-
-
-### AskQuestion
-
-#### Description
-
-- The GameService sends the AI service information regarding a newly beginning or ongoing conversation. The AI service uses OpenAI APIs to generate a question from the point of view of the askerID directed toward the answererID.
-
-#### Request
-
-- `Prompt(chat.Id, chat.Content, chat.SenderId, chat.RecipientId, chat.conversationID, stream);`
-
-  ```json
-  {
-    "prompt": "message to prompt agent with",
-    "askerID": "GUID of agent who will ask question",
-    "answererID": "GUID of person be asked the question",
-    "conversationID": "GUID of current conversation",
-    "stream": "true if the AI service should stream the response, false otherwise"
-  }
-  ```
-
-#### Response
-
-- `200 OK`
-
-  ```json
-  {
-    "AgentResponderId": "ID of recipient who sent the message that triggered the response",
-    "userRecipientId": "ID of user who originally sent the message that triggered this incoming",
-    "conversationID": "GUID of current conversation",
-    "content": "AI-generated response"
   }
   ```
