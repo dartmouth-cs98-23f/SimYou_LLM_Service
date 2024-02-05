@@ -1,12 +1,16 @@
 import pydantic
+from types import List
 
 # Model for the post request used to prompt the agent
-class Prompt(pydantic.BaseModel):
-    sourceAgentID: str
-    targetAgentID: str
-    prompt: str
+class PromptInfo(pydantic.BaseModel):
+    questionerID: str
+    responderID: str
+    msg: str
+    respondWithQuestion: bool
+    streamResponse: bool
     msgID=""
     responseID=""
+    convoID=""
 
 # Model for the post request used to generate thumbnails for worlds
 class ThumbnailInfo(pydantic.BaseModel):
@@ -24,4 +28,14 @@ class AgentInfo:
         self.firstName = firstName
         self.lastName = lastName
         self.description = description
-    
+
+class ConversationInfo(pydantic.BaseModel):
+    participant1ID: str
+    participant2ID: str
+    conversationID: str
+
+class InitAgentInfo(pydantic.BaseModel):
+    agentID: str
+    questions: List[str]
+    answers: List[List[str]]
+
