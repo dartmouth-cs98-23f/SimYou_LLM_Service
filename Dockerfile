@@ -14,4 +14,7 @@ RUN pip install --no-cache-dir --upgrade -r /SIMYOU_LLM_SERVICE/requirements.txt
 COPY ./app /SIMYOU_LLM_SERVICE/app
 
 # (6)
+EXPOSE 8000
+
+# (7)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
