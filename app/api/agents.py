@@ -12,7 +12,7 @@ import os
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
-from .models import ConversationInfo, InfoToInitAgent, Prompt, AgentInfo, ThumbnailInfo
+from .models import ConversationInfo, InitAgentInfo, PromptInfo, AgentInfo
 from .memory.chroma_client_wrapper import ChromaClientWrapper
 from .prompts import Prompts
 
@@ -55,7 +55,7 @@ def delete_agent(agentID: int):
 
 # POST to prompt an agent with a prompt
 @agents.post('/api/agents/prompt')
-async def prompt_agent(prompt: Prompt):
+async def prompt_agent(prompt: PromptInfo):
     relevant_mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
         agent_id=prompt.responderID,
         prompt=prompt.msg
@@ -115,7 +115,7 @@ async def end_conversation(convoInfo: ConversationInfo):
     pass
 
 @agents.post('/api/agents/generatePersona')
-async def generate_agent(initInfo: InfoToInitAgent):
+async def generate_agent(initInfo: InitAgentInfo):
     # Put all of responses into a prompt (could play around with doing summaries of summaries)
 
     # Send to GPT
@@ -124,48 +124,12 @@ async def generate_agent(initInfo: InfoToInitAgent):
 
     pass
 
-@agents.post('/api/agents/generateWorldThumbnail')
-async def generate_thumbnail(initInfo: ThumbnailInfo):
-    # 
-
-    pass
-
 @agents.post('/api/agents/getQuestion')
-async def generate_question(initInfo: InfoToInitAgent):
+async def generate_question(promptInfo: PromptInfo):
     # Pseudocode very similar to generic generate response
 
     # Slight difference is we should expect that conversation might be un-initialized (i.e., this is the first message)
     pass
-
-# # POST to prompt an agent with a prompt and stream the response
-# @agents.post('/api/agents/prompt/stream')
-# async def prompt_agent_stream(prompt: Prompt) -> StreamingResponse:
-#     relevant_mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
-#         agent_id=prompt.targetAgentID,
-#         prompt=prompt.msg
-#     ))
-#     recent_mems = asyncio.create_task(get_recent_messages(prompt.msg))
-#     source_agent_info = asyncio.create_task(get_agent_info(prompt.sourceAgentID))
-#     target_agent_info = asyncio.create_task(get_agent_info(prompt.targetAgentID))
-#     await relevant_mems
-#     await source_agent_info
-#     await target_agent_info
-
-#     # TODO: Pop the last k messages from the current conversation
-
-#     if not source_agent_info.result():
-#         raise HTTPException(status_code=400, detail=f"Bad source agent id: {prompt.sourceAgentID}")
-
-#     if not target_agent_info.result():
-#         raise HTTPException(status_code=400, detail=f"Bad target agent id: {prompt.targetAgentID}")
-
-#     gpt_prompt = Prompts.get_convo_prompt(prompt.msg, target_agent_info.result(), source_agent_info.result(), mems.result())
-
-#     # Don't need this any more
-#     # new_mem = source_agent_info.result().firstName + " " + source_agent_info.result().lastName + " said to you: " + str(prompt.msg)
-
-#     asyncio.create_task(chroma_manager.add_memory(agent_id=prompt.targetAgentID, memory=new_mem, unique_id=prompt.msgID))
-#     return StreamingResponse(streaming_request(gpt_prompt, prompt.targetAgentID, source_agent_info.result()), media_type="text/event-stream")
 
 # Stream response generator
 async def streaming_request(prompt: str) -> AsyncIterable[str]:

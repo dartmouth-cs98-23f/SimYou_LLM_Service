@@ -2,7 +2,7 @@ import pydantic
 from types import List
 
 # Model for the post request used to prompt the agent
-class Prompt(pydantic.BaseModel):
+class PromptInfo(pydantic.BaseModel):
     questionerID: str
     responderID: str
     msg: str
@@ -28,12 +28,8 @@ class ConversationInfo(pydantic.BaseModel):
     participant2ID: str
     conversationID: str
 
-class InfoToInitAgent(pydantic.BaseModel):
+class InitAgentInfo(pydantic.BaseModel):
     agentID: str
     questions: List[str]
     answers: List[List[str]]
-
-class ThumbnailInfo(pydantic.BaseModel):
-    worldID: str
-    description: str
 
