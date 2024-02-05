@@ -9,7 +9,7 @@ class Prompt(pydantic.BaseModel):
     responseID=""
 
 # Model for the post request used to generate thumbnails for worlds
-class Thumbnail(pydantic.BaseModel):
+class ThumbnailInfo(pydantic.BaseModel):
     worldID: str
     ownerID: str
     description: str
