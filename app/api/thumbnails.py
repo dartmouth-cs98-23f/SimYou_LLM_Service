@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from dotenv import load_dotenv, find_dotenv
 import os
 from .prompts import Prompts
+from .models import Thumbnail
 from openai import OpenAI
 import base64
 import boto3
@@ -26,22 +27,20 @@ secret_key = os.getenv("OPENAI_API_KEY")
 thumbnails = APIRouter()
 
 @thumbnails.post('/api/thumbnails')
-def add_thumbnail(worldID: int):
+@thumbnails.post('/api/thumbnails')
+def add_thumbnail(thumbnail: Thumbnail):
     """
-    This function generates a thumbnail image for a given world ID using OpenAI's DALL-E model.
+    This function generates a thumbnail image based on the provided description using OpenAI's DALL-E model.
     The generated image is then stored in an S3 bucket and the URL of the image is returned.
 
     Args:
-    worldID (int): The ID of the world for which to generate a thumbnail.
+    thumbnail (Thumbnail): The Thumbnail object which contains the world ID, owner ID, and description.
 
     Returns:
     str: The URL of the generated thumbnail image.
     """
-    # TODO get world description from db
-    world_description = "Tatoine from Star Wars"
-
     # Get prompt for generating the thumbnail
-    prompt = Prompts.get_world_thumbnail_prompt(world_description)
+    prompt = Prompts.get_world_thumbnail_prompt(thumbnail.description)
 
     # Generate image using OpenAI's DALL-E model
     response = client.images.generate(
@@ -54,7 +53,7 @@ def add_thumbnail(worldID: int):
     )
 
     # Build file name
-    file_name = "thumbnails/" + str(worldID) + ".jpeg"
+    file_name = "thumbnails/" + str(thumbnail.worldID) + ".jpeg"
 
     # Put image in S3 bucket
     obj = s3.Object(bucket_name, file_name)
