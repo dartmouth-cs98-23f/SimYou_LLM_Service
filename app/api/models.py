@@ -37,5 +37,3 @@ class ThumbnailInfo(pydantic.BaseModel):
     worldID: str
     description: str
 
-
-

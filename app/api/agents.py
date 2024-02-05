@@ -66,16 +66,35 @@ async def prompt_agent(prompt: Prompt):
     await relevant_mems, recent_mems, questioner_info, responder_info
 
     if not questioner_info.result():
-        raise HTTPException(status_code=400, detail=f"Bad questioner agent id: {prompt.questionerID}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Bad questioner agent id: {prompt.questionerID}"
+            )
     if not responder_info.result():
-        raise HTTPException(status_code=400, detail=f"Bad target agent id: {prompt.responderID}")
+        raise HTTPException(status_code=400, 
+        detail=f"Bad target agent id: {prompt.responderID}"
+        )
     if not recent_mems.result():
-        raise HTTPException(status_code=400, detail=f"Bad conversation id: {prompt.convoID}")
+        raise HTTPException(status_code=400, 
+        detail=f"Bad conversation id: {prompt.convoID}"
+        )
 
-    gpt_prompt = Prompts.get_convo_prompt(prompt.msg, responder_info.result(), questioner_info.result(), relevant_mems.result(), recent_mems.result())
+    gpt_prompt = Prompts.get_convo_prompt(
+        prompt.msg, 
+        responder_info.result(), 
+        questioner_info.result(), 
+        relevant_mems.result(), 
+        recent_mems.result()
+    )
 
     if prompt.streamResponse:
-        return StreamingResponse(streaming_request(gpt_prompt, prompt.responderID, questioner_info.result()), media_type="text/event-stream")
+        return StreamingResponse(
+            streaming_request(
+                gpt_prompt,
+                prompt.responderID,
+                questioner_info.result()
+                ), 
+            media_type="text/event-stream")
     else:
         gpt = asyncio.create_task(
             model.apredict(gpt_prompt)
@@ -85,18 +104,37 @@ async def prompt_agent(prompt: Prompt):
 
 @agents.post('/api/agents/endConversation')
 async def end_conversation(convoInfo: ConversationInfo):
+    # Get ordered list of all messages from this conversation from back-end DB
+    # Ideal format is [(AgentID, what they said), (AgentID, what they responded), ...] in order of least to most recent
+
+    # Put all of messages into a prompt (ideally one from each agent's POV)
+
+    # Send both prompts to GPT to summarize
+
+    # Write conversation summaries to respective Chroma collections
     pass
 
 @agents.post('/api/agents/generatePersona')
 async def generate_agent(initInfo: InfoToInitAgent):
+    # Put all of responses into a prompt (could play around with doing summaries of summaries)
+
+    # Send to GPT
+
+    # Send summary back to game-service
+
     pass
 
 @agents.post('/api/agents/generateWorldThumbnail')
-async def generate_agent(initInfo: ThumbnailInfo):
+async def generate_thumbnail(initInfo: ThumbnailInfo):
+    # 
+
     pass
 
 @agents.post('/api/agents/getQuestion')
-async def generate_agent(initInfo: InfoToInitAgent):
+async def generate_question(initInfo: InfoToInitAgent):
+    # Pseudocode very similar to generic generate response
+
+    # Slight difference is we should expect that conversation might be un-initialized (i.e., this is the first message)
     pass
 
 # # POST to prompt an agent with a prompt and stream the response
