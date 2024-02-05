@@ -117,12 +117,14 @@ async def end_conversation(convoInfo: ConversationInfo):
 @agents.post('/api/agents/generatePersona')
 async def generate_agent(initInfo: InitAgentInfo):
     # Put all of responses into a prompt (could play around with doing summaries of summaries)
-
+    gpt_prompt = Prompts.get_agent_persona_prompt(initInfo.questions, initInfo.answers)
     # Send to GPT
-
+    gpt = asyncio.create_task(
+            model.apredict(gpt_prompt)
+        )
+    await gpt
     # Send summary back to game-service
-
-    pass
+    return gpt.result()
 
 @agents.post('/api/agents/getQuestion')
 async def generate_question(promptInfo: PromptInfo):

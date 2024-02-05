@@ -1,8 +1,8 @@
 from .models import AgentInfo
-from typing import List
+from typing import List, Tuple
 
 class Prompts:
-    def get_convo_prompt(message: str, responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems: List[str], recentMems: List[(str, str)]):
+    def get_convo_prompt(message: str, responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems: List[str], recentMems: List[Tuple[str, str]]):
         """
         This function generates a conversation prompt for a GPT model using the given parameters.
         
@@ -64,6 +64,31 @@ class Prompts:
         """
         
         dall_e_prompt = f"""
-        Create a thumbnail image of a video game world described as: {worldDescription}
+        Create a pixel art thumbnail image of a retro video game world described as: {worldDescription}
         """
         return dall_e_prompt
+    
+    def get_agent_persona_prompt(questions: [str], answers: [str]):
+        """
+        This function generates a persona prompt for an AI model using the given questions and answers.
+        
+        :param questions: A list of strings representing the questions about the character's persona.
+        :param answers: A list of strings representing the answers to the questions about the character's persona.
+        :return: A string representing the generated persona prompt.
+        """
+        # Check if the lengths of questions and answers are equal
+        if len(questions) != len(answers):
+            raise ValueError("The number of questions should match with the number of answers.")
+
+        # Initialize the prompt string
+        prompt = "This is an AI model trained to generate a character persona. Here are some details about the character:\n"
+
+        # Iterate over the questions and answers
+        for question, answer in zip(questions, answers):
+            # Add the question and answer to the prompt
+            prompt += f"{question}: {answer}\n"
+
+        # Add the instruction to generate more details
+        prompt += "\nBased on the above information, generate more details about the character."
+
+        return prompt
