@@ -12,6 +12,12 @@ class PromptInfo(pydantic.BaseModel):
     responseID=""
     convoID=""
 
+# Model for the post request used to generate thumbnails for worlds
+class ThumbnailInfo(pydantic.BaseModel):
+    worldID: str
+    ownerID: str
+    description: str
+
 # Agent info object
 class AgentInfo:
     firstName: str
