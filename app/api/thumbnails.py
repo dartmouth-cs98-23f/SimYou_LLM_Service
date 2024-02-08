@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException
 from dotenv import load_dotenv, find_dotenv
 import os
 from .prompts import Prompts
-from .models import ThumbnailInfo
+from .request_models.ThumbnailRequest import ThumbnailInfo
+from .response_models.thumbnailResponse import ThumbnailResponse
 from openai import OpenAI
 import base64
 import boto3
@@ -26,8 +27,7 @@ secret_key = os.getenv("OPENAI_API_KEY")
 # Initialize API router for thumbnails
 thumbnails = APIRouter()
 
-@thumbnails.post('/api/thumbnails')
-@thumbnails.post('/api/thumbnails')
+@thumbnails.post('/api/thumbnails', response_model=ThumbnailResponse)
 def add_thumbnail(thumbnailInfo: ThumbnailInfo):
     """
     This function generates a thumbnail image based on the provided description using OpenAI's DALL-E model.
@@ -64,5 +64,6 @@ def add_thumbnail(thumbnailInfo: ThumbnailInfo):
 
     # Get object URL
     object_url = "https://%s.s3-%s.amazonaws.com/%s" % (bucket_name,location, file_name)
-
-    return object_url
+    
+    response_obj = ThumbnailResponse(thumbnailURL=object_url)
+    return response_obj
