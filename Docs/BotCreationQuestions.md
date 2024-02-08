@@ -5,7 +5,7 @@
 ## Instructions
 You can create bots to fill your world to make it more interesting. You can stick to a theme, or mix and match characters. Feel free to give your bot the persona of a character from popular culture; in fact, that might give you a more interesting character. Answer these questions from the perspective of your bot.
 
-## Biographical questions (Bot creator should be in charge of doing these quickly on sign-up)
+## Biographical questions (Bot creator should be in charge of doing these quickly on bot-creation)
 
 1) What is your name?
 2) What is your age?
