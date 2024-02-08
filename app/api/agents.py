@@ -5,6 +5,8 @@ import psycopg2
 
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv, find_dotenv
 import os
@@ -12,7 +14,16 @@ import os
 from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
-from .models import ConversationInfo, InitAgentInfo, PromptInfo, AgentInfo
+
+from .models import AgentInfo
+
+from .request_models.DescribeAgentRequest import InitAgentInfo
+from .request_models.EndConvoRequest import ConversationInfo
+from .request_models.PromptRequest import PromptInfo
+
+from .response_models.generateAgentResponse import AgentDescriptionModel
+from .response_models.promptResponse import PromptResponse
+
 from .memory.chroma_client_wrapper import ChromaClientWrapper
 from .prompts import Prompts
 
@@ -56,31 +67,40 @@ def delete_agent(agentID: int):
 # POST to prompt an agent with a prompt
 @agents.post('/api/agents/prompt')
 async def prompt_agent(prompt: PromptInfo):
+    """
+    This function uses genAI to return a response to the prompt posed by questionerID from the perspective of responderID.
+
+    Args:
+    prompt (PromptInfo): The PromptInfo object which contains the world ID, owner ID, and description.
+
+    Returns:
+    PromptResponse: a json argument of {response: str}
+    """
     relevant_mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
-        agent_id=prompt.responderID,
-        prompt=prompt.msg
+        agent_id=prompt.recipientId,
+        prompt=prompt.content
     ))
-    recent_mems = asyncio.create_task(get_recent_messages(prompt.convoID, prompt.responderID))
-    questioner_info = asyncio.create_task(get_agent_info(prompt.questionerID))
-    responder_info = asyncio.create_task(get_agent_info(prompt.responseID))
+    recent_mems = asyncio.create_task(get_recent_messages(prompt.conversationId, prompt.recipientId))
+    questioner_info = asyncio.create_task(get_agent_info(prompt.senderId))
+    responder_info = asyncio.create_task(get_agent_info(prompt.recipientId))
     await relevant_mems, recent_mems, questioner_info, responder_info
 
     if not questioner_info.result():
         raise HTTPException(
             status_code=400,
-            detail=f"Bad questioner agent id: {prompt.questionerID}"
+            detail=f"Bad questioner agent id: {prompt.senderId}"
             )
     if not responder_info.result():
         raise HTTPException(status_code=400, 
-        detail=f"Bad target agent id: {prompt.responderID}"
+        detail=f"Bad target agent id: {prompt.recipientId}"
         )
     if not recent_mems.result():
         raise HTTPException(status_code=400, 
-        detail=f"Bad conversation id: {prompt.convoID}"
+        detail=f"Bad conversation id: {prompt.conversationId}"
         )
 
     gpt_prompt = Prompts.get_convo_prompt(
-        prompt.msg, 
+        prompt.content, 
         responder_info.result(), 
         questioner_info.result(), 
         relevant_mems.result(), 
@@ -88,10 +108,11 @@ async def prompt_agent(prompt: PromptInfo):
     )
 
     if prompt.streamResponse:
+        # TODO: Can we return this in a json?
         return StreamingResponse(
             streaming_request(
                 gpt_prompt,
-                prompt.responderID,
+                prompt.recipientId,
                 questioner_info.result()
                 ), 
             media_type="text/event-stream")
@@ -100,7 +121,9 @@ async def prompt_agent(prompt: PromptInfo):
             model.apredict(gpt_prompt)
         )
         await gpt
-        return gpt.result()
+        responseItem = PromptResponse(response=gpt.result())
+        json_compatible_item_data = jsonable_encoder(responseItem)
+        return JSONResponse(content=json_compatible_item_data)
 
 @agents.post('/api/agents/endConversation')
 async def end_conversation(convoInfo: ConversationInfo):
@@ -114,8 +137,9 @@ async def end_conversation(convoInfo: ConversationInfo):
     # Write conversation summaries to respective Chroma collections
     pass
 
-@agents.post('/api/agents/generatePersona')
+@agents.post('/api/agents/generatePersona', response_model=AgentDescriptionModel)
 async def generate_agent(initInfo: InitAgentInfo):
+    # TODO: initialize a vector store for this agent...
     # Put all of responses into a prompt (could play around with doing summaries of summaries)
     gpt_prompt = Prompts.get_agent_persona_prompt(initInfo.questions, initInfo.answers)
     # Send to GPT
@@ -124,14 +148,10 @@ async def generate_agent(initInfo: InitAgentInfo):
         )
     await gpt
     # Send summary back to game-service
-    return gpt.result()
+    responseItem = AgentDescriptionModel(response=gpt.result())
+    json_compatible_item_data = jsonable_encoder(responseItem)
+    return JSONResponse(content=json_compatible_item_data)
 
-@agents.post('/api/agents/getQuestion')
-async def generate_question(promptInfo: PromptInfo):
-    # Pseudocode very similar to generic generate response
-
-    # Slight difference is we should expect that conversation might be un-initialized (i.e., this is the first message)
-    pass
 
 # Stream response generator
 async def streaming_request(prompt: str) -> AsyncIterable[str]:

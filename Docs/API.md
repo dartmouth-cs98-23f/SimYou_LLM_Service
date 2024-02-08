@@ -1,10 +1,6 @@
-# AI Service to GameService API
+# AI Service API
 
-## Notes
-
-## GameService to AI Service Communication
-
-### prompt
+### Talk to an AI agent
 
 #### Description
 
@@ -12,16 +8,16 @@
 
 #### Request
 
-- `Prompt(chat.Id, chat.Content, chat.SenderId, chat.RecipientId, chat.conversationID, stream);`
+- `POST /api/agents/prompt`
 
   ```json
   {
-    "prompt": "message to prompt agent with",
-    "senderId": "GUID of sender",
-    "recipientId": "GUID of recipient (agent you will get a response from)",
-    "conversationID": "GUID of current conversation",
-    "streamResponse": "true if the AI service should stream the response, false otherwise",
-    "respondWithQuestion": "true if you want the AI to shake up convo by asking a question"
+    "senderId": "00000000-0000-0000-0000-000000000000",
+    "recipientId": "00000000-0000-0000-0000-000000000000",
+    "conversationID": "00000000-0000-0000-0000-000000000000",
+    "content": "Test message",
+    "streamResponse": false,
+    "respondWithQuestion": false
   }
   ```
 
@@ -29,16 +25,11 @@
 
 - `200 OK`
 
-  ```json
-  {
-    "responderID": "ID of recipient who sent the message that triggered the response",
-    "questyionerID": "ID of user who originally sent the message that triggered this incoming",
-    "conversationID": "GUID of current conversation",
-    "content": "AI-generated response"
-  }
+  ```
+    "string"
   ```
 
-### endConversation
+### Notify AI service that conversation ended
 
 #### Description 
 
@@ -46,13 +37,15 @@
 
 #### Request
 
-- `UserToUserChatNotify(chat.Id, chat.SenderId, chat.RecipientId);`
+- `POST /api/agents/endConversation`
 
   ```json
   {
-    "chatId": "GUID GameService generates",
-    "senderId": "GUID of sender",
-    "RecipientId": "GUID of recipient"
+    "conversationID": "00000000-0000-0000-0000-000000000000",
+    "participants": [
+      "00000000-0000-0000-0000-000000000000",
+      "00000000-0000-0000-0000-000000000000"
+    ]
   }
   ```
 
@@ -60,38 +53,8 @@
 
 - `200 OK`
 
-### GenerateSprite (*Stretch Feature*)
 
-#### Description
-
-- The GameService receives either a picture of the real person's face or a description of what the user wants their sprite's appearance to look like. If it's a picture, it will be sent to the AI Service to be described by GPT into words. Then the description will be sent along to DALL-E to generate a full body sprite and a headashot of the sprite, which will then be sent back to the GameService, saved by it, and sent along to the Front-End.
-
-#### Request
-
-- `GenerateSprite(userId, description, photo);`
-
-  ```json
-  {
-    "userId": "GUID of user",
-
-    "description": "Description of appearance",
-    or:
-    "photo": "URL to photo that GameService saves in back-end"
-  }
-  ```
-
-#### Response
-
-- `200 OK`
-  ```json
-  {
-    "userId": "GUID of user",
-    "sprite": "sprite file",
-    "spriteHeadshot": "sprite file",
-  }
-  ```
-
-### generatePersona
+### Generate a summary for an AI persona
 
 #### Description
 
@@ -99,12 +62,20 @@
 
 #### Request
 
-- `GenerateCharacterSummary(characterId, responses);`
+- `POST /api/agents/generatePersona`
   ```json
   {
-    "characterId": "GUID of user/agent",
-    "questions": ["question 1", "question 2", "question 3"],
-    "answers": [["response to q1", "response to q1", ] ["response to q2", "response to q2", ], ["response to q3", "response to q3", ]]
+    "characterId": "00000000-0000-0000-0000-000000000000",
+    "questions": [
+      "question 1",
+      "question 2",
+      "question 3"
+    ],
+    "responses": [
+      ["response to q1", "response to q1", ],
+      ["response to q2", "response to q2", ],
+      ["response to q3", "response to q3", ]
+    ]
   }
   ```
 
@@ -113,12 +84,11 @@
 - `200 OK`
   ```json
   {
-    "characterId": "GUID of user/agent",
-    "generatedSummary": "summary"
+    "summary": "Test summary"
   }
   ```
 
-### generateWorldThumbnail
+### Generate a world thumbnail
 
 #### Description
 
@@ -126,13 +96,13 @@
 
 #### Request
 
-- `GenerateWorldThumbnail(worldId, description, creatorId);`
+- `POST /api/thumbnails`
 
   ```json
   {
-    "worldId": "GUID of World",
-    "description": "string",
-    "creatorId": "GUID of user"
+    "worldId": "00000000-0000-0000-0000-000000000000",
+    "creatorId": "00000000-0000-0000-0000-000000000000",
+    "description": "Test description"
   }
   ```
 
@@ -141,7 +111,6 @@
 - `200 OK`
   ```json
   {
-    "worldID": "GUID of user/agent",
-    "photo": "URL to photo that GameService saves in back-end"
+    "thumbnailURL": "https://www.test.com/test_thumbnail.png"
   }
   ```
