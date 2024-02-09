@@ -51,7 +51,7 @@ class Prompts:
 
         Please reply in a concise and conversational manner!
 
-        You say to {sourceAgentInfo.firstName} {sourceAgentInfo.lastName}:
+        You say to {askerInfo.firstName} {askerInfo.lastName}:
         """
         return gpt_prompt
 
@@ -92,3 +92,29 @@ class Prompts:
         prompt += "\nBased on the above information, generate more details about the character."
 
         return prompt
+    
+    def get_question_prompt(responderInfo: AgentInfo, askerInfo: AgentInfo):
+        """
+        This function generates a question prompt for an AI model using the given responder and asker agent information.
+        
+        :param responderInfo: An instance of AgentInfo class representing the responder agent's information.
+        :param askerInfo: An instance of AgentInfo class representing the asker agent's information.
+        :return: A string representing the generated question prompt.
+        """
+        # Create the GPT prompt
+        gpt_prompt = f"""
+        You are a character with the name {responderInfo.firstName} {responderInfo.lastName} with this description:
+        \'{responderInfo.description}\'
+
+        -----------------------------------------------------------------------------
+
+        You are talking to another character with the name {askerInfo.firstName} {askerInfo.lastName} who has this description:
+        \'{askerInfo.description}\'
+
+        -----------------------------------------------------------------------------
+
+        Based on your understanding of {askerInfo.firstName} {askerInfo.lastName}, what question would you ask them?
+        
+        You say to {askerInfo.firstName} {askerInfo.lastName}:
+        """
+        return gpt_prompt
