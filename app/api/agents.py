@@ -75,6 +75,9 @@ async def prompt_agent(prompt: PromptInfo):
     Returns:
     PromptResponse: a json argument of {response: str}
     """
+    if prompt.convoID:
+        recent_mems = asyncio.create_task(get_recent_messages(prompt.convoID, prompt.responderID))
+        await recent_mems
     relevant_mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
         agent_id=prompt.recipientId,
         prompt=prompt.content
@@ -134,7 +137,6 @@ async def prompt_agent(prompt: PromptInfo):
             responder_info.result(),
             questioner_info.result(),
             relevant_mems.result(),
-            recent_mems.result()
         )
 
 
