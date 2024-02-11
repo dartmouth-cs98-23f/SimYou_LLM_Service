@@ -118,3 +118,24 @@ class Prompts:
         You say to {askerInfo.firstName} {askerInfo.lastName}:
         """
         return gpt_prompt
+    
+    def get_convo_summary_prompt(convo_transcript:str, responder:AgentInfo, otherAgent:AgentInfo) -> str:
+        """
+        This function generates a conversation summary prompt for an AI model.
+        
+        :return: A string representing the generated conversation summary prompt.
+        """
+        # Create the GPT prompt
+        gpt_prompt = f"""
+        You are a character with the name {responder.firstName} {responder.lastName} with this description:
+        \'{responder.description}\'
+        
+        -----------------------------------------------------------------------------
+
+        Based on the conversation between you and {otherAgent.firstName}, generate a summary of the conversation.
+
+        The conversation is as follows:
+
+        {convo_transcript}
+        """
+        return gpt_prompt

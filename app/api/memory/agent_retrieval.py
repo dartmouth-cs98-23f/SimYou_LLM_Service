@@ -1,5 +1,5 @@
 import psycopg2
-from models import AgentInfo
+from ..models import AgentInfo
 
 # Helper method to get the info for an agent with id agentID
 async def get_agent_info(agentID, game_db_name, game_db_user, game_db_pass, game_db_url) -> AgentInfo:

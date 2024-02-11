@@ -24,7 +24,7 @@ from .memory.chroma_client_wrapper import ChromaClientWrapper
 from .prompts import Prompts
 
 from .memory.agent_retrieval import get_agent_info
-from .memory.conversation_retrieval import get_recent_messages
+from .memory.conversation_retrieval import get_recent_messages, get_agent_perspective
 
 
 load_dotenv(find_dotenv())
@@ -159,15 +159,43 @@ async def prompt_agent(prompt: PromptInfo):
 
 @agents.post('/api/agents/endConversation')
 async def end_conversation(convoInfo: ConversationInfo):
-    # Get ordered list of all messages from this conversation from back-end DB
-    # Ideal format is [(AgentID, what they said), (AgentID, what they responded), ...] in order of least to most recent
+    
+    # Get the most recent messages from the conversation
+    recent_messages = asyncio.create_task(get_recent_messages(conversationID=convoInfo.conversationID, num_popped=convoInfo.numPopped))
+    
+    agent1_info = asyncio.create_task(get_agent_info(convoInfo.participants[0]))
+    agent2_info = asyncio.create_task(get_agent_info(convoInfo.participants[1]))
 
-    # Put all of messages into a prompt (ideally one from each agent's POV)
+    # Await everything
+    await agent1_info, agent2_info, recent_messages
+
+
+    convo_for_agent1 = get_agent_perspective(convo_transcript=recent_messages,
+                                              for_agent=convoInfo.participants[0],
+                                              other_agent_name=agent2_info.firstName
+                                              )
+    convo_for_agent2 = get_agent_perspective(convo_transcript=recent_messages,
+                                                for_agent=convoInfo.participants[1],
+                                                other_agent_name=agent1_info.firstName
+                                                )
+
+    # Make a prompt for each agent
+    prompt_for_agent1 = get_convo_summary_prompt(convo_transcript=convo_for_agent1)
+    prompt_for_agent2 = get_convo_summary_prompt(convo_transcript=convo_for_agent2)
 
     # Send both prompts to GPT to summarize
+    gpt_agent1 = asyncio.create_task(model.apredict(prompt_for_agent1))
+    gpt_agent2 = asyncio.create_task(model.apredict(prompt_for_agent2))
     
-    # Write conversation summaries to respective Chroma collections
-    pass
+    await gpt_agent1, gpt_agent2
+
+    # Write both to correct Chroma collections
+    agent1_mem_write = asyncio.create_task(chroma_manager.write_memory(agent1_info.id, gpt_agent1.result()))
+    agent2_mem_write = asyncio.create_task(chroma_manager.write_memory(agent2_info.id, gpt_agent2.result()))
+
+    await agent1_mem_write, agent2_mem_write
+
+    return
 
 @agents.post('/api/agents/generatePersona', response_model=AgentDescriptionModel)
 async def generate_agent(initInfo: InitAgentInfo):
