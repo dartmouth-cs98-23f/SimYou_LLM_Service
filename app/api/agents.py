@@ -1,8 +1,6 @@
 import asyncio
 from typing import AsyncIterable, List
 import chromadb
-import psycopg2
-
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
@@ -15,8 +13,6 @@ from langchain.callbacks import AsyncIteratorCallbackHandler
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage
 
-from .models import AgentInfo
-
 from .request_models.DescribeAgentRequest import InitAgentInfo
 from .request_models.EndConvoRequest import ConversationInfo
 from .request_models.PromptRequest import PromptInfo
@@ -26,6 +22,9 @@ from .response_models.promptResponse import PromptResponse
 
 from .memory.chroma_client_wrapper import ChromaClientWrapper
 from .prompts import Prompts
+
+from .memory.agent_retrieval import get_agent_info
+from .memory.conversation_retrieval import get_recent_messages
 
 
 load_dotenv(find_dotenv())
@@ -80,12 +79,30 @@ async def prompt_agent(prompt: PromptInfo):
         agent_id=prompt.recipientId,
         prompt=prompt.content
     ))
-    if prompt.convoID:
-        recent_mems = asyncio.create_task(get_recent_messages(prompt.convoID, prompt.responderID))
-    questioner_info = asyncio.create_task(get_agent_info(prompt.questionerID))
-    responder_info = asyncio.create_task(get_agent_info(prompt.responseID))
-    # Await the completion of all tasks
-    await relevant_mems, recent_mems, questioner_info, responder_info
+    if prompt.conversationId:
+        recent_mems = asyncio.create_task(get_recent_messages(prompt.conversationId, prompt.recipientId))
+        questioner_info = asyncio.create_task(
+            get_agent_info(
+                prompt.senderId, 
+                game_db_user=game_db_user, 
+                game_db_url=game_db_url, 
+                game_db_name=game_db_name, 
+                game_db_pass=game_db_pass
+            )
+        )
+    responder_info = asyncio.create_task(
+        get_agent_info(
+            prompt.recipientId,
+            game_db_user=game_db_user, 
+            game_db_url=game_db_url, 
+            game_db_name=game_db_name, 
+            game_db_pass=game_db_pass
+        )
+    )
+    await relevant_mems, questioner_info, responder_info
+
+    if prompt.conversationId:
+        await recent_mems
 
     # Raise HTTPException if any of the tasks return None
     if not questioner_info.result():
@@ -166,6 +183,7 @@ async def generate_agent(initInfo: InitAgentInfo):
     return JSONResponse(content=json_compatible_item_data)
 
 
+
 # Stream response generator
 async def streaming_request(prompt: str) -> AsyncIterable[str]:
     """Generator for each chunk received from OpenAI as response"""
@@ -186,41 +204,3 @@ async def streaming_request(prompt: str) -> AsyncIterable[str]:
         callback.done.set()
     await task
 
-# Helper method to get the info for an agent with id agentID
-async def get_agent_info(agentID) -> AgentInfo:
-    # db connection string
-    results = None
-    conn = psycopg2.connect(
-        dbname=game_db_name,
-        user=game_db_user,
-        password=game_db_pass,
-        host=game_db_url
-        )
-    try:
-        cursor = conn.cursor()      
-        query = f"""
-        SELECT \"FirstName\", \"LastName\", \"Description\"
-        FROM \"Users\"
-        WHERE \"UserId\" = \'{agentID}\'
-        """
-        cursor.execute(query)
-        results = cursor.fetchall()[0]
-        cursor.close()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print("no success", error)
-    finally:
-        if cursor:
-            cursor.close()
-        if results:
-            return AgentInfo(results[0], results[1], results[2])
-
-
-async def get_recent_messages(conversationID: str, responderID: str, num_popped = 10) -> List[str]:
-    '''
-    NOTE - ideally this function returns an ordered list of [(speaker, contents)]
-    where the first entry in the list is the least recent and the last entry is the
-    most recent, and where if speaker = person responding, then the speaker should
-    be listed as "You"
-    '''
-
-    return ["fee", "fi", "fo", "fum"]
