@@ -1,6 +1,4 @@
 import pydantic
-from typing import List
-
 
 # Agent info object
 class AgentInfo:
