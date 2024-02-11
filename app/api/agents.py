@@ -79,16 +79,17 @@ async def prompt_agent(prompt: PromptInfo):
         agent_id=prompt.recipientId,
         prompt=prompt.content
     ))
-    recent_mems = asyncio.create_task(get_recent_messages(prompt.conversationId, prompt.recipientId))
-    questioner_info = asyncio.create_task(
-        get_agent_info(
-            prompt.senderId, 
-            game_db_user=game_db_user, 
-            game_db_url=game_db_url, 
-            game_db_name=game_db_name, 
-            game_db_pass=game_db_pass
+    if prompt.conversationId:
+        recent_mems = asyncio.create_task(get_recent_messages(prompt.conversationId, prompt.recipientId))
+        questioner_info = asyncio.create_task(
+            get_agent_info(
+                prompt.senderId, 
+                game_db_user=game_db_user, 
+                game_db_url=game_db_url, 
+                game_db_name=game_db_name, 
+                game_db_pass=game_db_pass
+            )
         )
-    )
     responder_info = asyncio.create_task(
         get_agent_info(
             prompt.recipientId,
@@ -98,40 +99,54 @@ async def prompt_agent(prompt: PromptInfo):
             game_db_pass=game_db_pass
         )
     )
-    await relevant_mems, recent_mems, questioner_info, responder_info
+    await relevant_mems, questioner_info, responder_info
 
+    if prompt.conversationId:
+        await recent_mems
+
+    # Raise HTTPException if any of the tasks return None
     if not questioner_info.result():
         raise HTTPException(
             status_code=400,
-            detail=f"Bad questioner agent id: {prompt.senderId}"
-            )
+            detail=f"Bad questioner agent id: {prompt.questionerID}"
+        )
     if not responder_info.result():
-        raise HTTPException(status_code=400, 
-        detail=f"Bad target agent id: {prompt.recipientId}"
+        raise HTTPException(status_code=400,
+        detail=f"Bad target agent id: {prompt.responderID}"
         )
-    if not recent_mems.result():
-        raise HTTPException(status_code=400, 
-        detail=f"Bad conversation id: {prompt.conversationId}"
-        )
-
-    gpt_prompt = Prompts.get_convo_prompt(
-        prompt.content, 
-        responder_info.result(), 
-        questioner_info.result(), 
-        relevant_mems.result(), 
-        recent_mems.result()
+    if prompt.convoID and not recent_mems.result():
+        raise HTTPException(status_code=400,
+        detail=f"Bad conversation id: {prompt.convoID}"
     )
 
+    # Generate a prompt for the GPT model using the results of the tasks
+    if prompt.respondWithQuestion:
+        gpt_prompt = Prompts.get_question_prompt(
+            prompt.msg,
+            responder_info.result(),
+            questioner_info.result(),
+            relevant_mems.result(),
+            recent_mems.result()
+        )
+    else:
+        gpt_prompt = Prompts.get_convo_prompt(
+            prompt.msg,
+            responder_info.result(),
+            questioner_info.result(),
+            relevant_mems.result(),
+            recent_mems.result()
+        )
+
+
+    # If the response should be streamed, return a StreamingResponse
     if prompt.streamResponse:
         # TODO: Can we return this in a json?
         return StreamingResponse(
-            streaming_request(
-                gpt_prompt,
-                prompt.recipientId,
-                questioner_info.result()
-                ), 
-            media_type="text/event-stream")
+            streaming_request(gpt_prompt),
+            media_type="text/event-stream",
+        )
     else:
+        # Otherwise, create a task to generate a response from the GPT model and return the result
         gpt = asyncio.create_task(
             model.apredict(gpt_prompt)
         )
@@ -148,7 +163,7 @@ async def end_conversation(convoInfo: ConversationInfo):
     # Put all of messages into a prompt (ideally one from each agent's POV)
 
     # Send both prompts to GPT to summarize
-
+    
     # Write conversation summaries to respective Chroma collections
     pass
 
