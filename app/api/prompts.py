@@ -16,11 +16,10 @@ class Prompts:
         for i in range(len(relevantMems)):
             relevant_mems += f"({i+1}) {relevantMems[i]};\n"
         
-
         #TODO: Assemble the recent memory from the list of chat summaries
         recent_mems = ""
         for i in range(len(recentMems)):
-            relevant_mems += f"({relevantMems[i][0]} said: \"{relevantMems[i][1]}\";\n"
+            recent_mems += f"({recentMems[i][0]} said: \"{recentMems[i][1]}\";\n"
         
         # Create the GPT prompt
         gpt_prompt = f"""
@@ -68,7 +67,7 @@ class Prompts:
         """
         return dall_e_prompt
     
-    def get_agent_persona_prompt(questions: [str], answers: [str]):
+    def get_agent_persona_prompt(questions: List[str], answers: List[str]):
         """
         This function generates a persona prompt for an AI model using the given questions and answers.
         
@@ -93,23 +92,49 @@ class Prompts:
 
         return prompt
     
-    def get_question_prompt(responderInfo: AgentInfo, askerInfo: AgentInfo):
+    def get_question_prompt(responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems = None, recentMems = None):
         """
         This function generates a question prompt for an AI model using the given responder and asker agent information.
+        Generates a question prompt for an AI model using given responder and asker agent information, and optionally, 
+        relevant and recent memories. The generated prompt includes details about the responder and asker agents, 
+        their recent conversation, and a request for the AI to generate a question that the responder would ask the asker.
         
         :param responderInfo: An instance of AgentInfo class representing the responder agent's information.
         :param askerInfo: An instance of AgentInfo class representing the asker agent's information.
+        :param relevantMems: A list of relevant memories (optional).
+        :param recentMems: A list of recent memories (optional).
         :return: A string representing the generated question prompt.
         """
+        relevant_mems = ""
+        if relevant_mems:
+            for i in range(len(relevantMems)):
+                relevant_mems += f"({i+1}) {relevantMems[i]};\n"
+        
+        # TODO: Assemble the recent memory from the list of chat summaries
+        recent_mems = ""
+        if recentMems:
+            for i in range(len(recentMems)):
+                recent_mems += f"({recentMems[i][0]} said: \"{recentMems[i][1]}\";\n"
+        
         # Create the GPT prompt
         gpt_prompt = f"""
         You are a character with the name {responderInfo.firstName} {responderInfo.lastName} with this description:
         \'{responderInfo.description}\'
 
         -----------------------------------------------------------------------------
+        
+        You remember the following:
+        {relevant_mems}
+        
+        -----------------------------------------------------------------------------
 
         You are talking to another character with the name {askerInfo.firstName} {askerInfo.lastName} who has this description:
         \'{askerInfo.description}\'
+
+        -----------------------------------------------------------------------------
+        
+        This is what you have been talking about
+        {recent_mems}
 
         -----------------------------------------------------------------------------
 

@@ -16,8 +16,34 @@
     "recipientId": "00000000-0000-0000-0000-000000000000",
     "conversationID": "00000000-0000-0000-0000-000000000000",
     "content": "Test message",
-    "streamResponse": false,
-    "respondWithQuestion": false
+    "streamResponse": false
+  }
+  ```
+
+#### Response
+
+- `200 OK`
+
+  ```
+    "string"
+  ```
+
+### Prompt an AI agent to ask a question
+
+#### Description
+
+- The GameService sends the AI service a request from an online player whose intended recipient is an AI agent / offline player. The AI service retrieves relevant memories to construct a prompt that it sends to the OpenAI API. The AI serviece sends the GameService the response and the GameService adds the chat response to the chat table in the back-end database and sends along the response to the user.
+
+#### Request
+
+- `POST /api/agents/question`
+
+  ```json
+  {
+    "senderId": "00000000-0000-0000-0000-000000000000",
+    "recipientId": "00000000-0000-0000-0000-000000000000",
+    "conversationID": "00000000-0000-0000-0000-000000000000",
+    "streamResponse": false
   }
   ```
 

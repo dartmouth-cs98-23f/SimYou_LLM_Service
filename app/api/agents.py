@@ -1,5 +1,6 @@
 import asyncio
 from typing import AsyncIterable, List
+from app.api.request_models.QuestionRequest import QuestionInfo
 import chromadb
 
 from fastapi import APIRouter, HTTPException
@@ -75,24 +76,25 @@ async def prompt_agent(prompt: PromptInfo):
     Returns:
     PromptResponse: a json argument of {response: str}
     """
-    if prompt.convoID:
-        recent_mems = asyncio.create_task(get_recent_messages(prompt.convoID, prompt.responderID))
-        await recent_mems
-    relevant_mems = asyncio.create_task(chroma_manager.retrieve_relevant_memories(
-        agent_id=prompt.recipientId,
-        prompt=prompt.content
-    ))
+    
     if prompt.conversationId:
         recent_mems = asyncio.create_task(get_recent_messages(prompt.conversationId, prompt.recipientId))
-        questioner_info = asyncio.create_task(
-            get_agent_info(
-                prompt.senderId, 
-                game_db_user=game_db_user, 
-                game_db_url=game_db_url, 
-                game_db_name=game_db_name, 
-                game_db_pass=game_db_pass
-            )
+    
+    relevant_mems = asyncio.create_task(
+        chroma_manager.retrieve_relevant_memories(
+            agent_id=prompt.recipientId,
+            prompt=prompt.content
         )
+    )
+    sender_info = asyncio.create_task(
+        get_agent_info(
+            prompt.senderId, 
+            game_db_user=game_db_user, 
+            game_db_url=game_db_url, 
+            game_db_name=game_db_name, 
+            game_db_pass=game_db_pass
+        )
+    )
     responder_info = asyncio.create_task(
         get_agent_info(
             prompt.recipientId,
@@ -102,46 +104,113 @@ async def prompt_agent(prompt: PromptInfo):
             game_db_pass=game_db_pass
         )
     )
-    await relevant_mems, questioner_info, responder_info
-
+    await relevant_mems, sender_info, responder_info
+    
     if prompt.conversationId:
         await recent_mems
 
     # Raise HTTPException if any of the tasks return None
-    if not questioner_info.result():
-        raise HTTPException(
-            status_code=400,
-            detail=f"Bad questioner agent id: {prompt.questionerID}"
+    if not sender_info.result():
+        raise HTTPException(status_code=400,
+            detail=f"Bad sender agent id: {prompt.senderId}"
         )
     if not responder_info.result():
         raise HTTPException(status_code=400,
-        detail=f"Bad target agent id: {prompt.responderID}"
+            detail=f"Bad target agent id: {prompt.recipientId}"
         )
-    if prompt.convoID and not recent_mems.result():
+    if prompt.conversationId and not recent_mems.result():
         raise HTTPException(status_code=400,
-        detail=f"Bad conversation id: {prompt.convoID}"
-    )
+            detail=f"Bad conversation id: {prompt.conversationId}"
+        )
 
     # Generate a prompt for the GPT model using the results of the tasks
-    if prompt.respondWithQuestion:
-        gpt_prompt = Prompts.get_question_prompt(
-            prompt.msg,
-            responder_info.result(),
-            questioner_info.result(),
-            relevant_mems.result(),
-            recent_mems.result()
-        )
-    else:
-        gpt_prompt = Prompts.get_convo_prompt(
-            prompt.msg,
-            responder_info.result(),
-            questioner_info.result(),
-            relevant_mems.result(),
-        )
-
+    gpt_prompt = Prompts.get_convo_prompt(
+        prompt.content,
+        responder_info.result(),
+        sender_info.result(),
+        recent_mems.result(),
+        relevant_mems
+    )
 
     # If the response should be streamed, return a StreamingResponse
     if prompt.streamResponse:
+        # TODO: Can we return this in a json?
+        return StreamingResponse(
+            streaming_request(gpt_prompt),
+            media_type="text/event-stream",
+        )
+    else:
+        # Otherwise, create a task to generate a response from the GPT model and return the result
+        gpt = asyncio.create_task(
+            model.apredict(gpt_prompt)
+        )
+        await gpt
+        responseItem = PromptResponse(response=gpt.result())
+        json_compatible_item_data = jsonable_encoder(responseItem)
+        return JSONResponse(content=json_compatible_item_data)
+
+# POST to prompt an agent with a prompt
+@agents.post('/api/agents/question')
+async def question_agent(questionInfo: QuestionInfo):
+    if questionInfo.conversationId:
+        recent_mems = asyncio.create_task(get_recent_messages(questionInfo.conversationId, questionInfo.recipientId))
+    
+    sender_info = asyncio.create_task(
+        get_agent_info(
+            questionInfo.senderId, 
+            game_db_user=game_db_user, 
+            game_db_url=game_db_url, 
+            game_db_name=game_db_name, 
+            game_db_pass=game_db_pass
+        )
+    )
+    responder_info = asyncio.create_task(
+        get_agent_info(
+            questionInfo.recipientId,
+            game_db_user=game_db_user, 
+            game_db_url=game_db_url, 
+            game_db_name=game_db_name, 
+            game_db_pass=game_db_pass
+        )
+    )
+    await sender_info, responder_info
+    if questionInfo.conversationId:
+        await recent_mems
+
+    # Raise HTTPException if any of the tasks return None
+    if not sender_info.result():
+        raise HTTPException(
+            status_code=400,
+            detail=f"Bad sender agent id: {questionInfo.questionerID}"
+        )
+    if not responder_info.result():
+        raise HTTPException(status_code=400,
+            detail=f"Bad target agent id: {questionInfo.id}"
+        )
+    if questionInfo.conversationId and not recent_mems.result():
+        raise HTTPException(status_code=400,
+            detail=f"Bad conversation id: {questionInfo.conversationId}"
+        )
+
+    # Generate a prompt for the GPT model using the results of the tasks
+    chroma_prompt = Prompts.get_question_prompt(
+        responder_info.result(),
+        sender_info.result(),
+    )
+    relevant_mems = chroma_manager.retrieve_relevant_memories(
+        agent_id=questionInfo.recipientId,
+        prompt=chroma_prompt
+    )
+    gpt_prompt = Prompts.get_question_prompt(
+        chroma_prompt,
+        responder_info.result(),
+        sender_info.result(),
+        recent_mems.result(),
+        relevant_mems
+    )
+
+    # If the response should be streamed, return a StreamingResponse
+    if questionInfo.streamResponse:
         # TODO: Can we return this in a json?
         return StreamingResponse(
             streaming_request(gpt_prompt),
