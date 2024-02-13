@@ -228,7 +228,6 @@ async def question_agent(questionInfo: QuestionInfo):
 
 @agents.post('/api/agents/endConversation')
 async def end_conversation(convoInfo: ConversationInfo):
-    
     # Get the most recent messages from the conversation
     recent_messages = asyncio.create_task(get_recent_messages(conversationID=convoInfo.conversationID, num_popped=convoInfo.numPopped))
     
@@ -249,8 +248,8 @@ async def end_conversation(convoInfo: ConversationInfo):
                                                 )
 
     # Make a prompt for each agent
-    prompt_for_agent1 = get_convo_summary_prompt(convo_transcript=convo_for_agent1)
-    prompt_for_agent2 = get_convo_summary_prompt(convo_transcript=convo_for_agent2)
+    prompt_for_agent1 = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agent1)
+    prompt_for_agent2 = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agent2)
 
     # Send both prompts to GPT to summarize
     gpt_agent1 = asyncio.create_task(model.apredict(prompt_for_agent1))
