@@ -4,5 +4,6 @@ import pydantic
 class QuestionInfo(pydantic.BaseModel):
     senderId: str   # sender of request
     recipientId: str    # recipient of request
+    isRecipientUser: bool
     conversationId: str
     streamResponse: bool

@@ -4,6 +4,7 @@ import pydantic
 class PromptInfo(pydantic.BaseModel):
     senderId: str   # sender of request
     recipientId: str    # recipient of request
+    isRecipientUser: bool
     conversationId: str
     content: str
     streamResponse: bool

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from dotenv import load_dotenv, find_dotenv
 import os
 from .prompts import Prompts

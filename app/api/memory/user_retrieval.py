@@ -2,7 +2,7 @@ import psycopg2
 from ..models import AgentInfo
 
 # Helper method to get the info for an agent with id agentID
-async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pass, game_db_url) -> AgentInfo:
+async def get_agent_info(agentID, game_db_name, game_db_user, game_db_pass, game_db_url) -> AgentInfo:
     # db connection string
     results = None
     conn = psycopg2.connect(
@@ -15,7 +15,7 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         cursor = conn.cursor()      
         query = f"""
         SELECT \"FirstName\", \"LastName\", \"Description\"
-        FROM \"{"Users" if isUser else "Agents"}\""
+        FROM \"Users\"
         WHERE \"UserId\" = \'{agentID}\'
         """
         cursor.execute(query)

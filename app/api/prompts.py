@@ -164,3 +164,11 @@ class Prompts:
         {convo_transcript}
         """
         return gpt_prompt
+    
+    def get_avatar_prompt(appearanceDescription: str):
+        dall_e_prompt = f"""
+        Create a pixel art image with a solid background for a retro video game character that is front-facing, full-body, and looks as follows: {appearanceDescription}
+        
+        Make sure there is a bit of space above and below the character
+        """
+        return dall_e_prompt
