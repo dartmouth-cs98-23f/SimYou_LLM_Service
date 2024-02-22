@@ -109,6 +109,7 @@ async def prompt_agent(prompt: PromptInfo):
     sender_info = asyncio.create_task(
         get_agent_info(
             prompt.senderId, 
+            isUser=True,
             game_db_user=game_db_user, 
             game_db_url=game_db_url, 
             game_db_name=game_db_name, 

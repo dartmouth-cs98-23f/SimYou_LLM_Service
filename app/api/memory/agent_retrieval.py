@@ -1,5 +1,8 @@
 import psycopg2
 from ..models import AgentInfo
+from .lru_cache import LRUCache
+
+agent_info_cache = LRUCache(128)
 
 async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pass, game_db_url) -> AgentInfo:
     """
@@ -16,6 +19,9 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
     Returns:
     AgentInfo: An instance of the AgentInfo model containing the first name, last name, and description of the agent.
     """
+    res = agent_info_cache.get(agentID)
+    if res != -1:
+        return res
     # Connect to the DB
     results = None
     conn = psycopg2.connect(
@@ -41,4 +47,5 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         if cursor:
             cursor.close()
         if results:
+            LRUCache.put(agentID, AgentInfo(results[0], results[1], results[2]))
             return AgentInfo(results[0], results[1], results[2])

@@ -51,12 +51,10 @@ class ChromaClientWrapper:
         now = datetime.datetime.now()
 
         # Generate unique ID
-        # NOTE: This isn't perfect and should be replaced for prod. But good enuf for mvp.
         if not unique_id:
             timestamp = int(datetime.datetime.timestamp(now)) * 1000
             unique_id = f"{timestamp}-{random.randint(1, 1000)}"
 
-        #TODO: Wrap this in a try catch
         try:
             COLLECTION.add(
                 ids=[unique_id],
@@ -138,13 +136,13 @@ class ChromaClientWrapper:
                 # due to time elapsing
                 # To avoid this case, let's just give memories that were last touched within the last 5 minutes a similarity boost -- should have
                 # the desired effect for technigala
-                last_touched_str = metadata['last-touched']
-                last_touched = self.dateTime_str_to_time(last_touched_str)
-                time_elapsed = now - last_touched
+                # last_touched_str = metadata['last-touched']
+                # last_touched = self.dateTime_str_to_time(last_touched_str)
+                # time_elapsed = now - last_touched
 
-                if time_elapsed.seconds <= mem_boost_seconds_threshold:
-                    distance *= .80
-
+                # if time_elapsed.seconds <= mem_boost_seconds_threshold:
+                #     distance *= .80
+                
                 if not most_relevant or -1 * distance < most_relevant[0][0]:
                     heapq.heappush(most_relevant, (-1 * distance, document, id))
                 
@@ -162,39 +160,3 @@ class ChromaClientWrapper:
                     ret.append(mem[1])
 
             return ret
-            
-
-    
-
-    # def summarizeCollection(self, collection_id: str, destination_id: str):
-    #     '''
-    #     Given a chroma client and a collection ID, summarizes all memories in the collection belonging
-    #     to collection_id and puts summary in destination_id
-    #     NOTE: Don't need for MVP
-    #     '''
-    #     collection = self.client.get_collection(collection_id)
-    #     mems = collection.get()['documents']
-    #     chunk = []
-    #     for mem in mems:
-    #         chunk.append(mem)
-            
-    #         if len(chunk) == 10:
-    #             summary = prompt_gpt_for_summary(chunk, destination_id)
-
-    #             chunk = []
-        
-    #     if chunk:
-    #         prompt_gpt_for_summary(chunk, destination_id)
-    #     client.delete_collection(collection_id)
-    #     client.create_collection(collection_id)
-
-
-
-    # def prompt_gpt_for_summary(self, text_list, summary_dest):
-    #     '''
-    #     Given a list of strings, prompt GPT to summarize the list into higher-level reflections
-    #     NOTE: Don't need for MVP
-    #     '''
-
-    #     pass
-        
