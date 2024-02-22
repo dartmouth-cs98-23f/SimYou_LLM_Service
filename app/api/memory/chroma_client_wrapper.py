@@ -28,12 +28,10 @@ class ChromaClientWrapper:
         now = datetime.datetime.now()
 
         # Generate unique ID
-        # NOTE: This isn't perfect and should be replaced for prod. But good enuf for mvp.
         if not unique_id:
             timestamp = int(datetime.datetime.timestamp(now)) * 1000
             unique_id = f"{timestamp}-{random.randint(1, 1000)}"
 
-        #TODO: Wrap this in a try catch
         try:
             COLLECTION.add(
                 ids=[unique_id],

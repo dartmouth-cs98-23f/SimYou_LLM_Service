@@ -48,6 +48,8 @@ def get_agent_perspective(convo_transcript, for_agent: str, other_agent_name: st
     specified by the for_agent parameter.
 
     convo_transcript = [(speakerID, message), (speakerID, message), ...]
+    for_agent = agentID of the agent whose perspective we want
+    other_agent_name = the name of the other agent in the conversation
     '''
     convo_str = ""
     for thing_said in convo_transcript:
