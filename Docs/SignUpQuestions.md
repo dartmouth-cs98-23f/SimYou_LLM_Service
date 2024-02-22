@@ -9,10 +9,9 @@
 Before you start playing, answer these quick questions. We will use these questions generate an AI alter-ego made custom for you. Your AI alter-ego will be available to your friends to chat with while you're offline. You can answer these questions honestly, humorously, or you can just make things up. It's up to you! Design your AI however you want.
 
 ### Basic Biographical Stuff
-1) What is your name?
-2) What is your age?
-3) What is your occupation?
-4) What period do you live in?
+1) What is your age?
+2) What is your occupation?
+3) What period do you live in?
 
 ### Personality
 1) How do you like to waste your time? (Gauge hobbies)

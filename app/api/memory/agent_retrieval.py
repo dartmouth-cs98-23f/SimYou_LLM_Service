@@ -3,6 +3,7 @@ from ..models import AgentInfo
 from .lru_cache import LRUCache
 
 agent_info_cache = LRUCache(128)
+user_info_cache = LRUCache(128)
 
 async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pass, game_db_url) -> AgentInfo:
     """
@@ -47,5 +48,5 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         if cursor:
             cursor.close()
         if results:
-            LRUCache.put(agentID, AgentInfo(results[0], results[1], results[2]))
+            agent_info_cache.put(agentID, AgentInfo(results[0], results[1], results[2]))
             return AgentInfo(results[0], results[1], results[2])

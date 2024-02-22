@@ -1,3 +1,5 @@
+# TODO: Rename this file to something more descriptive
+
 # Agent info object
 class AgentInfo:
     firstName: str
