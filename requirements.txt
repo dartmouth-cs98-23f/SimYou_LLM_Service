@@ -93,3 +93,5 @@ yarl==1.9.2
 zipp==3.17.0
 psycopg2
 boto3
+rembg
+pillow

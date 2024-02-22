@@ -14,6 +14,7 @@
   {
     "senderId": "00000000-0000-0000-0000-000000000000",
     "recipientId": "00000000-0000-0000-0000-000000000000",
+    "isRecipient": false,
     "conversationID": "00000000-0000-0000-0000-000000000000",
     "content": "Test message",
     "streamResponse": false
@@ -111,6 +112,33 @@
   ```json
   {
     "summary": "Test summary"
+  }
+  ```
+
+### Generate an agent avatar
+
+#### Description
+
+- AI service uses generative AI to create a avatar for the agent to be displayed in game.
+
+#### Request
+
+- `POST /api/agents/generateAvatar`
+
+  ```json
+  {
+    "characterId": "00000000-0000-0000-0000-000000000000",
+    "description": "Test description"
+  }
+  ```
+
+#### Response
+
+- `200 OK`
+  ```json
+  {
+    "avatarURL": "https://www.test.com/test_thumbnail.png",
+    "headshotURL": "https://www.test.com/test_thumbnail.png"
   }
   ```
 

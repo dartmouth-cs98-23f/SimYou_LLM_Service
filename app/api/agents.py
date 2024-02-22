@@ -1,6 +1,7 @@
 import asyncio
 from typing import AsyncIterable, List
 from app.api.request_models.QuestionRequest import QuestionInfo
+from app.api.response_models.avatarResponse import AvatarResponse
 import chromadb
 
 from fastapi import APIRouter, HTTPException
@@ -17,6 +18,7 @@ from langchain.schema import HumanMessage
 from .request_models.DescribeAgentRequest import InitAgentInfo
 from .request_models.EndConvoRequest import ConversationInfo
 from .request_models.PromptRequest import PromptInfo
+from .request_models.GenerateAvatarRequest import GenerateAvatarInfo
 
 from .response_models.generateAgentResponse import AgentDescriptionModel
 from .response_models.promptResponse import PromptResponse
@@ -26,6 +28,13 @@ from .prompts import Prompts
 
 from .memory.agent_retrieval import get_agent_info
 from .memory.conversation_retrieval import get_recent_messages, get_agent_perspective
+
+from openai import OpenAI
+import base64
+import boto3
+import rembg
+from PIL import Image
+from io import BytesIO
 
 
 load_dotenv(find_dotenv())
@@ -49,6 +58,17 @@ game_db_name = os.getenv("GAME_DB_NAME")
 game_db_url = os.getenv("GAME_DB_ADDRESS")
 game_db_pass = os.getenv("GAME_DB_PASS")
 game_db_user = os.getenv("GAME_DB_USER")
+
+# Get AWS keys from environment variables
+aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+aws_public_key = os.getenv("AWS_ACCESS_KEY_ID")
+
+# Initialize OpenAI and S3 clients
+client = OpenAI()
+s3 = boto3.resource('s3', region_name='us-east-2', aws_access_key_id=aws_public_key, aws_secret_access_key=aws_secret_key)
+
+# Define S3 bucket name
+bucket_name = 'sim-you-media'
 
 agents = APIRouter()
 
@@ -89,15 +109,17 @@ async def prompt_agent(prompt: PromptInfo):
     sender_info = asyncio.create_task(
         get_agent_info(
             prompt.senderId, 
+            isUser=True,
             game_db_user=game_db_user, 
             game_db_url=game_db_url, 
             game_db_name=game_db_name, 
-            game_db_pass=game_db_pass
+            game_db_pass=game_db_pass,
         )
     )
     responder_info = asyncio.create_task(
         get_agent_info(
             prompt.recipientId,
+            isUser=prompt.isRecipientUser,
             game_db_user=game_db_user, 
             game_db_url=game_db_url, 
             game_db_name=game_db_name, 
@@ -167,6 +189,7 @@ async def question_agent(questionInfo: QuestionInfo):
     responder_info = asyncio.create_task(
         get_agent_info(
             questionInfo.recipientId,
+            isUser=questionInfo.isRecipientUser,
             game_db_user=game_db_user, 
             game_db_url=game_db_url, 
             game_db_name=game_db_name, 
@@ -276,10 +299,55 @@ async def generate_agent(initInfo: InitAgentInfo):
         )
     await gpt
     # Send summary back to game-service
-    responseItem = AgentDescriptionModel(response=gpt.result())
-    json_compatible_item_data = jsonable_encoder(responseItem)
-    return JSONResponse(content=json_compatible_item_data)
+    responseItem = AgentDescriptionModel(description=gpt.result())
+    return responseItem
 
+@agents.post('/api/agents/generateAvatar')
+async def generate_avatar(avatarInfo: GenerateAvatarInfo):
+     # Get prompt for generating the thumbnail
+    prompt = Prompts.get_avatar_prompt(avatarInfo.appearanceDescription)
+
+    # Generate image using OpenAI's DALL-E model
+    response = client.images.generate(
+        model="dall-e-2",
+        prompt=prompt,
+        size="256x256",
+        quality="standard",
+        n=1,
+        response_format="b64_json",
+    )
+
+    # Decode image
+    image_bytes = base64.b64decode(response.data[0].b64_json)
+
+    # Remove image background
+    avatar_bytes = rembg.remove(image_bytes)
+
+    # Crop for headshot
+    headshot_img = Image.open(BytesIO(avatar_bytes))
+    headshot_img.crop((50, 0, 150, 100))
+    headshot_in_mem = BytesIO()
+    headshot_img.save(headshot_in_mem, "PNG")
+
+    # Build file names
+    avatar_file_name = "avatars/agents/" + str(avatarInfo.characterId) + ".png"
+    headshot_file_name = "headshots/agents/" + str(avatarInfo.characterId) + "-headshot.png"
+
+    # Put images in S3 bucket
+    obj = s3.Object(bucket_name, avatar_file_name)
+    obj.put(Body=avatar_bytes)
+    obj = s3.Object(bucket_name, headshot_file_name)
+    obj.put(Body=headshot_in_mem.getvalue())
+
+    # Get bucket location
+    location = boto3.client('s3').get_bucket_location(Bucket=bucket_name)['LocationConstraint']
+
+    # Get URLs
+    avatar_url = "https://%s.s3-%s.amazonaws.com/%s" % (bucket_name, location, avatar_file_name)
+    headshot_url = "https://%s.s3-%s.amazonaws.com/%s" % (bucket_name, location, headshot_file_name)
+    
+    response_obj = AvatarResponse(avatarURL=avatar_url, headshotURL=headshot_url)
+    return response_obj
 
 
 # Stream response generator
