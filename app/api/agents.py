@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from typing import AsyncIterable, List
 from app.api.request_models.QuestionRequest import QuestionInfo
 from app.api.response_models.avatarResponse import AvatarResponse
@@ -329,8 +330,8 @@ async def generate_avatar(avatarInfo: GenerateAvatarInfo):
     headshot_img.save(headshot_in_mem, "PNG")
 
     # Build file names
-    avatar_file_name = "avatars/agents/" + str(avatarInfo.characterId) + ".png"
-    headshot_file_name = "headshots/agents/" + str(avatarInfo.characterId) + "-headshot.png"
+    avatar_file_name = "avatars/agents/" + str(uuid.uuid1()) + ".png"
+    headshot_file_name = "headshots/agents/" + str(uuid.uuid1()) + "-headshot.png"
 
     # Put images in S3 bucket
     obj = s3.Object(bucket_name, avatar_file_name)

@@ -7,6 +7,7 @@ from .response_models.thumbnailResponse import ThumbnailResponse
 from openai import OpenAI
 import base64
 import boto3
+import uuid
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -53,7 +54,7 @@ def add_thumbnail(thumbnailInfo: ThumbnailInfo):
     )
 
     # Build file name
-    file_name = "thumbnails/" + str(thumbnailInfo.worldID) + ".jpeg"
+    file_name = "thumbnails/" + str(uuid.uuid1()) + ".jpeg"
 
     # Put image in S3 bucket
     obj = s3.Object(bucket_name, file_name)
