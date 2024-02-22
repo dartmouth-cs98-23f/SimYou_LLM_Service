@@ -2,13 +2,11 @@
 
 # Agent info object
 class AgentInfo:
-    firstName: str
-    lastName: str
+    username: str
     description: str
 
-    def __init__(self, firstName, lastName, description):
-        self.firstName = firstName
-        self.lastName = lastName
+    def __init__(self, username, description):
+        self.username = username
         self.description = description
 
 

@@ -262,11 +262,11 @@ async def end_conversation(convoInfo: ConversationInfo):
 
     convo_for_agent1 = get_agent_perspective(convo_transcript=recent_messages,
                                               for_agent=convoInfo.participants[0],
-                                              other_agent_name=agent2_info.firstName
+                                              other_agent_name=agent2_info.username
                                               )
     convo_for_agent2 = get_agent_perspective(convo_transcript=recent_messages,
                                                 for_agent=convoInfo.participants[1],
-                                                other_agent_name=agent1_info.firstName
+                                                other_agent_name=agent1_info.username
                                                 )
 
     # Make a prompt for each agent

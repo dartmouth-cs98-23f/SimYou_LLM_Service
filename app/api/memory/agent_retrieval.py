@@ -35,9 +35,9 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         # Build and execute the query
         cursor = conn.cursor()      
         query = f"""
-        SELECT \"FirstName\", \"LastName\", \"Description\"
+        SELECT \"Username\", \"Description\"
         FROM \"{"Users" if isUser else "Agents"}\""
-        WHERE \"UserId\" = \'{agentID}\'
+        WHERE \"Id\" = \'{agentID}\'
         """
         cursor.execute(query)
         results = cursor.fetchall()[0]
@@ -48,5 +48,5 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         if cursor:
             cursor.close()
         if results:
-            agent_info_cache.put(agentID, AgentInfo(results[0], results[1], results[2]))
-            return AgentInfo(results[0], results[1], results[2])
+            agent_info_cache.put(agentID, AgentInfo(results[0], results[1]))
+            return AgentInfo(results[0], results[1])

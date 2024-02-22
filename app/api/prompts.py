@@ -23,7 +23,7 @@ class Prompts:
         
         # Create the GPT prompt
         gpt_prompt = f"""
-        You are a character with the name {responderInfo.firstName} {responderInfo.lastName} this description:
+        You are a character with the name {responderInfo.username} this description:
         \'{responderInfo.description}\'
         
         -----------------------------------------------------------------------------
@@ -32,7 +32,7 @@ class Prompts:
         {relevant_mems}
         -----------------------------------------------------------------------------
 
-        You are talking to another character with the name {askerInfo.firstName} {askerInfo.lastName} who has this description:
+        You are talking to another character with the name {askerInfo.username} who has this description:
         \'{askerInfo.description}\'
 
         -----------------------------------------------------------------------------
@@ -43,14 +43,14 @@ class Prompts:
 
         ...
 
-        {askerInfo.firstName} {askerInfo.lastName} says this to you:
+        {askerInfo.username} says this to you:
         \"{message}\" 
         
         -----------------------------------------------------------------------------
 
         Please reply in a concise and conversational manner!
 
-        You say to {askerInfo.firstName} {askerInfo.lastName}:
+        You say to {askerInfo.username}:
         """
         return gpt_prompt
 
@@ -118,7 +118,7 @@ class Prompts:
         
         # Create the GPT prompt
         gpt_prompt = f"""
-        You are a character with the name {responderInfo.firstName} {responderInfo.lastName} with this description:
+        You are a character with the name {responderInfo.username} with this description:
         \'{responderInfo.description}\'
 
         -----------------------------------------------------------------------------
@@ -128,7 +128,7 @@ class Prompts:
         
         -----------------------------------------------------------------------------
 
-        You are talking to another character with the name {askerInfo.firstName} {askerInfo.lastName} who has this description:
+        You are talking to another character with the name {askerInfo.username} who has this description:
         \'{askerInfo.description}\'
 
         -----------------------------------------------------------------------------
@@ -138,9 +138,9 @@ class Prompts:
 
         -----------------------------------------------------------------------------
 
-        Based on your understanding of {askerInfo.firstName} {askerInfo.lastName}, what question would you ask them?
+        Based on your understanding of {askerInfo.username}, what question would you ask them?
         
-        You say to {askerInfo.firstName} {askerInfo.lastName}:
+        You say to {askerInfo.username}:
         """
         return gpt_prompt
     
@@ -152,12 +152,12 @@ class Prompts:
         """
         # Create the GPT prompt
         gpt_prompt = f"""
-        You are a character with the name {responder.firstName} {responder.lastName} with this description:
+        You are a character with the name {responder.username} with this description:
         \'{responder.description}\'
         
         -----------------------------------------------------------------------------
 
-        Based on the conversation between you and {otherAgent.firstName}, generate a summary of the conversation.
+        Based on the conversation between you and {otherAgent.username}, generate a summary of the conversation.
 
         The conversation is as follows:
 
