@@ -8,9 +8,24 @@ import random
 class ChromaClientWrapper:
 
     def __init__(self, client: chromadb.Client):
+        """
+        Initialize ChromaClientWrapper with a chromadb.Client object.
+
+        Args:
+            client (chromadb.Client): The chromadb client object.
+        """
         self.client = client
 
     def dateTime_str_to_time(self, str):
+        """
+        Converts a datetime string to a datetime object.
+
+        Args:
+            str (str): A string representing a datetime.
+
+        Returns:
+            datetime.datetime: A datetime object.
+        """
         date, time = str.split(" ")
         year, month, day = date.split("-")
         hour, minute, seconds = time.split(":")
@@ -19,10 +34,18 @@ class ChromaClientWrapper:
 
 
     async def add_memory(self, agent_id: str, memory: str, unique_id=""):
-        '''
-        Adds a memory to the collection belonging to the agent
-        NOTE: might need to maintain another database to handle the memory IDs
-        '''
+        """
+        Adds a memory to the collection belonging to the agent.
+        NOTE: We might need to maintain another database to handle the memory IDs
+
+        Args:
+            agent_id (str): The id of the agent.
+            memory (str): The memory to be added.
+            unique_id (str, optional): The unique id for the memory. Defaults to "".
+
+        Raises:
+            ValueError: If the memory cannot be added.
+        """
         
         COLLECTION = self.client.get_or_create_collection(agent_id)
         now = datetime.datetime.now()
@@ -47,15 +70,26 @@ class ChromaClientWrapper:
         
 
     def add_agent(self, agent_id: str):
-        '''
-        Initializes a collection in the client corresponding to the agent_id
-        Note -- eventually we might expand this implementation to include a core memory / stable traits
-        '''
+        """
+        Initializes a collection in the client corresponding to the agent_id.
+        NOTE: We might expand this implementation to include a core memory / stable traits
+
+
+        Args:
+            agent_id (str): The id of the agent.
+        """
         self.client.get_or_create_collection(agent_id)
     
     def delete_agent(self, agent_id: str):
-        # Raises ValueError if the collection does not exist -- handle this so the operation 
-        # fails gracefully
+        """
+        Deletes a collection in the client corresponding to the agent_id.
+
+        Args:
+            agent_id (str): The id of the agent.
+
+        Raises:
+            ValueError: If the collection does not exist.
+        """
 
         try:
             self.client.delete_collection(agent_id)
@@ -65,10 +99,19 @@ class ChromaClientWrapper:
 
 
     async def retrieve_relevant_memories(self, agent_id: str, prompt: str, k=10, mem_boost_seconds_threshold=600, cutoff=1.50):
-        '''
-        Input: chroma client, agent_id, prompt, and k (how many memories you want to retrieve)
-        Ouput: <= k most relevant memories
-        '''
+        """
+        Retrieves the most relevant memories for the given agent and prompt.
+
+        Args:
+            agent_id (str): The id of the agent.
+            prompt (str): The prompt for the memory retrieval.
+            k (int, optional): The number of memories to retrieve. Defaults to 10.
+            mem_boost_seconds_threshold (int, optional): The threshold for boosting recent memories. Defaults to 600.
+            cutoff (float, optional): The similarity cutoff for memory retrieval. Defaults to 1.50.
+
+        Returns:
+            list: The list of most relevant memories.
+        """
 
         most_relevant = []
 
@@ -108,7 +151,6 @@ class ChromaClientWrapper:
                 if len(most_relevant) > k:
                     heapq.heappop(most_relevant)
                 
-            
             ret = []
             for mem in most_relevant:
                 # Only keep memories with distance below cut-off

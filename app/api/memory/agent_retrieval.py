@@ -1,9 +1,22 @@
 import psycopg2
 from ..models import AgentInfo
 
-# Helper method to get the info for an agent with id agentID
 async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pass, game_db_url) -> AgentInfo:
-    # db connection string
+    """
+    This asynchronous function retrieves information about an agent from a PostgreSQL database.
+    
+    Parameters:
+    agentID (str): The ID of the agent whose information needs to be retrieved.
+    isUser (bool): A boolean value indicating whether the agent is a user or not.
+    game_db_name (str): The name of the game database.
+    game_db_user (str): The username for the game database.
+    game_db_pass (str): The password for the game database.
+    game_db_url (str): The URL of the game database.
+    
+    Returns:
+    AgentInfo: An instance of the AgentInfo model containing the first name, last name, and description of the agent.
+    """
+    # Connect to the DB
     results = None
     conn = psycopg2.connect(
         dbname=game_db_name,
@@ -12,6 +25,7 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         host=game_db_url
         )
     try:
+        # Build and execute the query
         cursor = conn.cursor()      
         query = f"""
         SELECT \"FirstName\", \"LastName\", \"Description\"

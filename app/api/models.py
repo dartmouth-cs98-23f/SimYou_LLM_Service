@@ -1,5 +1,3 @@
-import pydantic
-
 # Agent info object
 class AgentInfo:
     firstName: str
