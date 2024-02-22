@@ -7,9 +7,8 @@ You can create bots to fill your world to make it more interesting. You can stic
 
 ## Biographical questions (Bot creator should be in charge of doing these quickly on bot-creation)
 
-1) What is your name?
-2) What is your age?
-3) What is your occupation?
+1) What is your age?
+2) What is your occupation?
 
 ## Question library
 1) What time period are you from?

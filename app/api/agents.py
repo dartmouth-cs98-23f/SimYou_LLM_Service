@@ -109,7 +109,7 @@ async def prompt_agent(prompt: PromptInfo):
     sender_info = asyncio.create_task(
         get_agent_info(
             prompt.senderId, 
-            isUser=True,
+            isUser=True,    # sender is always a user, right?
             game_db_user=game_db_user, 
             game_db_url=game_db_url, 
             game_db_name=game_db_name, 
@@ -259,7 +259,6 @@ async def end_conversation(convoInfo: ConversationInfo):
 
     # Await everything
     await agent1_info, agent2_info, recent_messages
-
 
     convo_for_agent1 = get_agent_perspective(convo_transcript=recent_messages,
                                               for_agent=convoInfo.participants[0],
