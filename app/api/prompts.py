@@ -67,7 +67,7 @@ class Prompts:
         """
         return dall_e_prompt
     
-    def get_agent_persona_prompt(questions: List[str], answers: List[str]):
+    def get_agent_persona_prompt(questions: List[str], answers: List[List[str]]):
         """
         This function generates a persona prompt for an AI model using the given questions and answers.
         
@@ -80,15 +80,18 @@ class Prompts:
             raise ValueError("The number of questions should match with the number of answers.")
 
         # Initialize the prompt string
-        prompt = "This is an AI model trained to generate a character persona. Here are some details about the character:\n"
+        prompt = f"""
+        You are an expert at synthesizing details about a character into detailed descriptions. 
+        A character filled out the following survey to answer questions about themself:\n"""
 
         # Iterate over the questions and answers
-        for question, answer in zip(questions, answers):
+        for question, answer_list in zip(questions, answers):
             # Add the question and answer to the prompt
-            prompt += f"{question}: {answer}\n"
+            for answer in answer_list:
+                prompt += f"\"{question}\": \"{answer}\"\n"
 
         # Add the instruction to generate more details
-        prompt += "\nBased on the above information, generate more details about the character."
+        prompt += "\nBased on the above information, generate a cohesive and thorough summary of the character."
 
         return prompt
     
