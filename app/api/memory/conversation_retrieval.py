@@ -28,14 +28,23 @@ async def get_recent_messages(game_db_name, game_db_user, game_db_pass, game_db_
         )
     try:
         # Build and execute query
-        cursor = conn.cursor()      
-        query = f"""
-        SELECT "Content", "SenderId", "RecipientId"
-        FROM "Chats"
-        WHERE "ConversationId" = '{conversationID}'
-        ORDER BY "CreatedTime\" DESC
-        {"LIMIT '{num_popped}'" if (num_popped >= 0) else ""}
-        """
+        cursor = conn.cursor()
+        query = ""
+        if num_popped >= 0:
+            query = f"""
+            SELECT "Content", "SenderId", "RecipientId"
+            FROM "Chats"
+            WHERE "ConversationId" = '{conversationID}'
+            ORDER BY "CreatedTime" DESC
+            LIMIT {num_popped}
+            """
+        else:
+            query = f"""
+            SELECT "Content", "SenderId", "RecipientId"
+            FROM "Chats"
+            WHERE "ConversationId" = '{conversationID}'
+            ORDER BY "CreatedTime" DESC
+            """
         cursor.execute(query)
         results = cursor.fetchall()
         cursor.close()

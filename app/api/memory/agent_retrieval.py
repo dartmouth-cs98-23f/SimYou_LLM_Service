@@ -33,12 +33,25 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         )
     try:
         # Build and execute the query
-        cursor = conn.cursor()      
-        query = f"""
-        SELECT \"Username\", \"Description\"
-        FROM \"{"Users" if isUser else "Agents"}\""
-        WHERE \"Id\" = \'{agentID}\'
-        """
+        cursor = conn.cursor()     
+        query = ""
+        if isUser:
+            query = f"""
+            SELECT "Username", "Description"
+            FROM "Users"
+            WHERE "Id" = '{agentID}'
+            """
+        else:
+            query = f"""
+            SELECT "Username", "Description"
+            FROM "Agents"
+            WHERE "Id" = '{agentID}'
+            """ 
+        # query = f"""
+        # SELECT "Username", "Description"
+        # FROM {"\"Users\"" if isUser else "\"Agents\""}
+        # WHERE "Id" = '{agentID}'
+        # """
         cursor.execute(query)
         results = cursor.fetchall()[0]
         cursor.close()

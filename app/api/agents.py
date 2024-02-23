@@ -98,7 +98,12 @@ async def prompt_agent(prompt: PromptInfo):
     """
     
     if prompt.conversationId:
-        recent_mems = asyncio.create_task(get_recent_messages(prompt.conversationId, prompt.recipientId))
+        recent_mems = asyncio.create_task(get_recent_messages(
+            game_db_name=game_db_name,
+            game_db_user=game_db_user,
+            game_db_pass=game_db_pass,
+            game_db_url=game_db_url,
+            conversationID=prompt.conversationId))
     
     relevant_mems = asyncio.create_task(
         chroma_manager.retrieve_relevant_memories(
@@ -175,7 +180,13 @@ async def prompt_agent(prompt: PromptInfo):
 @agents.post('/api/agents/question')
 async def question_agent(questionInfo: QuestionInfo):
     if questionInfo.conversationId:
-        recent_mems = asyncio.create_task(get_recent_messages(questionInfo.conversationId, questionInfo.recipientId))
+        recent_mems = asyncio.create_task(get_recent_messages(
+            game_db_name=game_db_name,
+            game_db_user=game_db_user,
+            game_db_pass=game_db_pass,
+            game_db_url=game_db_url,
+            conversationID=questionInfo.conversationId))
+        # questionInfo.recipientId
     
     sender_info = asyncio.create_task(
         get_agent_info(
@@ -252,7 +263,12 @@ async def question_agent(questionInfo: QuestionInfo):
 @agents.post('/api/agents/endConversation')
 async def end_conversation(convoInfo: ConversationInfo):
     # Get the most recent messages from the conversation
-    recent_messages = asyncio.create_task(get_recent_messages(conversationID=convoInfo.conversationID, num_popped=convoInfo.numPopped))
+    recent_messages = asyncio.create_task(get_recent_messages(
+            game_db_name=game_db_name,
+            game_db_user=game_db_user,
+            game_db_pass=game_db_pass,
+            game_db_url=game_db_url,
+            conversationID=convoInfo.conversationId))
     
     agent1_info = asyncio.create_task(get_agent_info(convoInfo.participants[0]))
     agent2_info = asyncio.create_task(get_agent_info(convoInfo.participants[1]))
