@@ -37,13 +37,13 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         query = ""
         if isUser:
             query = f"""
-            SELECT "Username", "Description"
+            SELECT "Username", "Summary"
             FROM "Users"
             WHERE "Id" = '{agentID}'
             """
         else:
             query = f"""
-            SELECT "Username", "Description"
+            SELECT "Username", "Summary"
             FROM "Agents"
             WHERE "Id" = '{agentID}'
             """ 

@@ -56,9 +56,9 @@ async def get_recent_messages(game_db_name, game_db_user, game_db_pass, game_db_
             cursor.close()
         if results:
             for row in results:
-                dictionary = dict(row)
-                recent_messages.append((dictionary["SenderId"], dictionary["Content"]))
-            return reversed(recent_messages)
+                recent_messages.append((row[1], row[0]))
+            recent_messages.reverse()
+            return recent_messages
 
 
 def get_agent_perspective(convo_transcript, for_agent: str, other_agent_name: str) -> str:
@@ -81,6 +81,5 @@ def get_agent_perspective(convo_transcript, for_agent: str, other_agent_name: st
             convo_str += f"You said: {thing_said[1]}\n"
         else:
             convo_str += f"{other_agent_name} said: \"{thing_said[1]}\"\n"
-
 
     return convo_str

@@ -157,7 +157,7 @@ async def prompt_agent(prompt: PromptInfo):
         responder_info.result(),
         sender_info.result(),
         recent_mems.result(),
-        relevant_mems
+        relevant_mems.result()
     )
 
     # If the response should be streamed, return a StreamingResponse
