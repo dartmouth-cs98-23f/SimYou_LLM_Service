@@ -30,6 +30,8 @@ from .prompts import Prompts
 from .memory.agent_retrieval import get_agent_info
 from .memory.conversation_retrieval import get_recent_messages, get_agent_perspective
 
+from .helpers.backoff_retry import retry_with_exponential_backoff
+
 from openai import OpenAI
 import base64
 import boto3
@@ -318,25 +320,20 @@ async def generate_agent(initInfo: InitAgentInfo):
     responseItem = AgentDescriptionModel(description=gpt.result())
     return responseItem
 
+# TODO: Handle OpenAI rate limiting - 5 images per minute.
 @agents.post('/api/agents/generateAvatar')
 async def generate_avatar(avatarInfo: GenerateAvatarInfo):
      # Get prompt for generating the thumbnail
     prompt = Prompts.get_avatar_prompt(avatarInfo.appearanceDescription)
 
     # Generate image using OpenAI's DALL-E model
-    response = client.images.generate(
-        model="dall-e-2",
-        prompt=prompt,
-        size="256x256",
-        quality="standard",
-        n=1,
-        response_format="b64_json",
-    )
+    response = generate_avatar_with_retries(prompt)
 
     # Decode image
     image_bytes = base64.b64decode(response.data[0].b64_json)
 
     # Remove image background
+    # TODO: Do this asynchronously
     avatar_bytes = rembg.remove(image_bytes)
 
     # Crop for headshot
@@ -386,3 +383,16 @@ async def streaming_request(prompt: str) -> AsyncIterable[str]:
         callback.done.set()
     await task
 
+
+
+@retry_with_exponential_backoff
+def generate_avatar_with_retries(prompt):
+    response = client.images.generate(
+        model="dall-e-2",
+        prompt=prompt,
+        size="256x256",
+        quality="standard",
+        n=1,
+        response_format="b64_json",
+    )
+    return response

@@ -8,6 +8,7 @@ from openai import OpenAI
 import base64
 import boto3
 import uuid
+from .helpers.backoff_retry import retry_with_exponential_backoff
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -28,6 +29,7 @@ secret_key = os.getenv("OPENAI_API_KEY")
 # Initialize API router for thumbnails
 thumbnails = APIRouter()
 
+# TODO: Handle OpenAI rate limiting - 5 images per minute.
 @thumbnails.post('/api/thumbnails', response_model=ThumbnailResponse)
 def add_thumbnail(thumbnailInfo: ThumbnailInfo):
     """
@@ -44,14 +46,7 @@ def add_thumbnail(thumbnailInfo: ThumbnailInfo):
     prompt = Prompts.get_world_thumbnail_prompt(thumbnailInfo.description)
 
     # Generate image using OpenAI's DALL-E model
-    response = client.images.generate(
-        model="dall-e-2",
-        prompt=prompt,
-        size="256x256",
-        quality="standard",
-        n=1,
-        response_format="b64_json",
-    )
+    response = generate_thumbnail_with_retries(prompt)
 
     # Build file name
     file_name = "thumbnails/" + str(uuid.uuid1()) + ".jpeg"
@@ -68,3 +63,15 @@ def add_thumbnail(thumbnailInfo: ThumbnailInfo):
     
     response_obj = ThumbnailResponse(thumbnailURL=object_url)
     return response_obj
+
+@retry_with_exponential_backoff
+def generate_thumbnail_with_retries(prompt):
+    response = client.images.generate(
+        model="dall-e-2",
+        prompt=prompt,
+        size="256x256",
+        quality="standard",
+        n=1,
+        response_format="b64_json",
+    )
+    return response
