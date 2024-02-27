@@ -127,8 +127,7 @@
 
   ```json
   {
-    "characterId": "00000000-0000-0000-0000-000000000000",
-    "description": "Test description"
+    "appearanceDescription": "Test description"
   }
   ```
 
