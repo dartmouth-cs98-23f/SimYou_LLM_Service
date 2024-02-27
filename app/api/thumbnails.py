@@ -7,11 +7,8 @@ from .response_models.thumbnailResponse import ThumbnailResponse
 from openai import OpenAI
 import base64
 import boto3
-<<<<<<< Updated upstream
 import uuid
 from .helpers.backoff_retry import retry_with_exponential_backoff
-=======
->>>>>>> Stashed changes
 
 # Load environment variables
 load_dotenv(find_dotenv())
