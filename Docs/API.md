@@ -14,8 +14,8 @@
   {
     "senderId": "00000000-0000-0000-0000-000000000000",
     "recipientId": "00000000-0000-0000-0000-000000000000",
-    "isRecipient": false,
-    "conversationID": "00000000-0000-0000-0000-000000000000",
+    "isRecipientUser": false,
+    "conversationId": "00000000-0000-0000-0000-000000000000",
     "content": "Test message",
     "streamResponse": false
   }
@@ -43,7 +43,7 @@
   {
     "senderId": "00000000-0000-0000-0000-000000000000",
     "recipientId": "00000000-0000-0000-0000-000000000000",
-    "conversationID": "00000000-0000-0000-0000-000000000000",
+    "conversationId": "00000000-0000-0000-0000-000000000000",
     "streamResponse": false
   }
   ```

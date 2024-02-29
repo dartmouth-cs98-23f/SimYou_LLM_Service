@@ -5,5 +5,12 @@ from typing import List
 class ConversationInfo(pydantic.BaseModel):
     # The unique identifier for the conversation
     conversationId: str
-    # A list of all participants involved in the conversation
-    participants: List[str]
+    # First participant in the conversation
+    participantA: str
+    # Second participant in the conversation
+    participantB: str
+    # Is participant A a user
+    isParticipantUserA: bool
+    # I participant B a user
+    isParticipantUserB: bool
+

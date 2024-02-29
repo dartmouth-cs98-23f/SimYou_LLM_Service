@@ -273,8 +273,26 @@ async def end_conversation(convoInfo: ConversationInfo):
             game_db_url=game_db_url,
             conversationID=convoInfo.conversationId))
     
-    agent1_info = asyncio.create_task(get_agent_info(convoInfo.participants[0]))
-    agent2_info = asyncio.create_task(get_agent_info(convoInfo.participants[1]))
+    agent1_info = asyncio.create_task(
+        get_agent_info(
+            agentID=convoInfo.participantA, 
+            isUser=convoInfo.isParticipantUserA,
+            game_db_user=game_db_user, 
+            game_db_url=game_db_url, 
+            game_db_name=game_db_name, 
+            game_db_pass=game_db_pass
+        )
+    )
+    agent2_info = asyncio.create_task(
+        get_agent_info(
+            agentID=convoInfo.participantB, 
+            isUser=convoInfo.isParticipantUserB,
+            game_db_user=game_db_user, 
+            game_db_url=game_db_url, 
+            game_db_name=game_db_name, 
+            game_db_pass=game_db_pass
+        )
+    )
 
     # Await everything
     await agent1_info, agent2_info, recent_messages
