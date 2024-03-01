@@ -218,11 +218,11 @@ async def question_agent(questionInfo: QuestionInfo):
     if not sender_info.result():
         raise HTTPException(
             status_code=400,
-            detail=f"Bad sender agent id: {questionInfo.questionerID}"
+            detail=f"Bad sender agent id: {questionInfo.senderId}"
         )
     if not responder_info.result():
         raise HTTPException(status_code=400,
-            detail=f"Bad target agent id: {questionInfo.id}"
+            detail=f"Bad target agent id: {questionInfo.recipientId}"
         )
     if questionInfo.conversationId and not recent_mems.result():
         raise HTTPException(status_code=400,
@@ -299,11 +299,11 @@ async def end_conversation(convoInfo: ConversationInfo):
 
     convo_for_agentA = get_agent_perspective(convo_transcript=recent_messages,
                                               for_agent=convoInfo.participantA,
-                                              other_agent_name=agentB_info.username
+                                              other_agent_name=agentB_info.result().username
                                               )
     convo_for_agentB = get_agent_perspective(convo_transcript=recent_messages,
                                                 for_agent=convoInfo.participantB,
-                                                other_agent_name=agentA_info.username
+                                                other_agent_name=agentA_info.result().username
                                                 )
 
     # Make a prompt for each agent
@@ -317,8 +317,8 @@ async def end_conversation(convoInfo: ConversationInfo):
     await gpt_agentA, gpt_agentB
 
     # Write both to correct Chroma collections
-    agentA_mem_write = asyncio.create_task(chroma_manager.write_memory(agentA_info.id, gpt_agentA.result()))
-    agentB_mem_write = asyncio.create_task(chroma_manager.write_memory(agentB_info.id, gpt_agentB.result()))
+    agentA_mem_write = asyncio.create_task(chroma_manager.write_memory(convoInfo.participantA, gpt_agentA.result()))
+    agentB_mem_write = asyncio.create_task(chroma_manager.write_memory(convoInfo.participantB, gpt_agentB.result()))
 
     await agentA_mem_write, agentB_mem_write
 
