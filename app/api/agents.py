@@ -273,7 +273,7 @@ async def end_conversation(convoInfo: ConversationInfo):
             game_db_url=game_db_url,
             conversationID=convoInfo.conversationId))
     
-    agent1_info = asyncio.create_task(
+    agentA_info = asyncio.create_task(
         get_agent_info(
             agentID=convoInfo.participantA, 
             isUser=convoInfo.isParticipantUserA,
@@ -283,7 +283,7 @@ async def end_conversation(convoInfo: ConversationInfo):
             game_db_pass=game_db_pass
         )
     )
-    agent2_info = asyncio.create_task(
+    agentB_info = asyncio.create_task(
         get_agent_info(
             agentID=convoInfo.participantB, 
             isUser=convoInfo.isParticipantUserB,
@@ -295,32 +295,32 @@ async def end_conversation(convoInfo: ConversationInfo):
     )
 
     # Await everything
-    await agent1_info, agent2_info, recent_messages
+    await agentA_info, agentB_info, recent_messages
 
-    convo_for_agent1 = get_agent_perspective(convo_transcript=recent_messages,
-                                              for_agent=convoInfo.participants[0],
-                                              other_agent_name=agent2_info.username
+    convo_for_agentA = get_agent_perspective(convo_transcript=recent_messages,
+                                              for_agent=convoInfo.participantA,
+                                              other_agent_name=agentB_info.username
                                               )
-    convo_for_agent2 = get_agent_perspective(convo_transcript=recent_messages,
-                                                for_agent=convoInfo.participants[1],
-                                                other_agent_name=agent1_info.username
+    convo_for_agentB = get_agent_perspective(convo_transcript=recent_messages,
+                                                for_agent=convoInfo.participantB,
+                                                other_agent_name=agentA_info.username
                                                 )
 
     # Make a prompt for each agent
-    prompt_for_agent1 = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agent1)
-    prompt_for_agent2 = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agent2)
+    prompt_for_agentA = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agentA)
+    prompt_for_agentB = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agentB)
 
     # Send both prompts to GPT to summarize
-    gpt_agent1 = asyncio.create_task(model.apredict(prompt_for_agent1))
-    gpt_agent2 = asyncio.create_task(model.apredict(prompt_for_agent2))
+    gpt_agentA = asyncio.create_task(model.apredict(prompt_for_agentA))
+    gpt_agentB = asyncio.create_task(model.apredict(prompt_for_agentB))
     
-    await gpt_agent1, gpt_agent2
+    await gpt_agentA, gpt_agentB
 
     # Write both to correct Chroma collections
-    agent1_mem_write = asyncio.create_task(chroma_manager.write_memory(agent1_info.id, gpt_agent1.result()))
-    agent2_mem_write = asyncio.create_task(chroma_manager.write_memory(agent2_info.id, gpt_agent2.result()))
+    agentA_mem_write = asyncio.create_task(chroma_manager.write_memory(agentA_info.id, gpt_agentA.result()))
+    agentB_mem_write = asyncio.create_task(chroma_manager.write_memory(agentB_info.id, gpt_agentB.result()))
 
-    await agent1_mem_write, agent2_mem_write
+    await agentA_mem_write, agentB_mem_write
 
     return
 
