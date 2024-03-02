@@ -53,7 +53,12 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         # WHERE "Id" = '{agentID}'
         # """
         cursor.execute(query)
-        results = cursor.fetchall()[0]
+        results = cursor.fetchall()
+        if not results:
+            print("No results for agent id: ", agentID)
+            return None
+        else:
+            results = results[0]
         cursor.close()
     except (Exception, psycopg2.DatabaseError) as error:
         print("no success", error)

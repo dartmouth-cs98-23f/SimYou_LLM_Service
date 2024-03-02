@@ -125,7 +125,7 @@ class Prompts:
 
         return prompt
     
-    def get_question_prompt(responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems = None, recentMems = None):
+    def get_question_prompt(responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems: List[str], recentMems: List[Tuple[str, str]]):
         """
         This function generates a question prompt for an AI model using the given responder and asker agent information.
         Generates a question prompt for an AI model using given responder and asker agent information, and optionally, 

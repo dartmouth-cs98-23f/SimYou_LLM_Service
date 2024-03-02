@@ -179,9 +179,8 @@ async def prompt_agent(prompt: PromptInfo):
             model.apredict(gpt_prompt)
         )
         await gpt
-        responseItem = PromptResponse(response=gpt.result())
-        json_compatible_item_data = jsonable_encoder(responseItem)
-        return JSONResponse(content=json_compatible_item_data)
+        response = gpt.result()
+        return response
 
 # POST to prompt an agent with a prompt
 @agents.post('/api/agents/question')
@@ -228,11 +227,13 @@ async def question_agent(questionInfo: QuestionInfo):
         raise HTTPException(status_code=400,
             detail=f"Bad target agent id: {questionInfo.recipientId}"
         )
-    # Check for recent mems error
+
     # Generate a prompt for the GPT model using the results of the tasks
     chroma_prompt = Prompts.get_question_prompt(
         responder_info.result(),
         sender_info.result(),
+        None,
+        None,
     )
     relevant_mems = chroma_manager.retrieve_relevant_memories(
         agent_id=questionInfo.recipientId,
@@ -269,21 +270,20 @@ async def question_agent(questionInfo: QuestionInfo):
             model.apredict(gpt_prompt)
         )
         await gpt
-        responseItem = PromptResponse(response=gpt.result())
-        json_compatible_item_data = jsonable_encoder(responseItem)
-        return JSONResponse(content=json_compatible_item_data)
+        response = gpt.result()
+        return response
 
 @agents.post('/api/agents/endConversation')
 async def end_conversation(convoInfo: ConversationInfo):
     # Get the most recent messages from the conversation
-    recent_messages = await asyncio.create_task(get_recent_messages(
+    recent_messages = asyncio.create_task(get_recent_messages(
             game_db_name=game_db_name,
             game_db_user=game_db_user,
             game_db_pass=game_db_pass,
             game_db_url=game_db_url,
             conversationID=convoInfo.conversationId))
     
-    agentA_info = await asyncio.create_task(
+    agentA_info = asyncio.create_task(
         get_agent_info(
             agentID=convoInfo.participantA, 
             isUser=convoInfo.isParticipantUserA,
@@ -293,7 +293,7 @@ async def end_conversation(convoInfo: ConversationInfo):
             game_db_pass=game_db_pass
         )
     )
-    agentB_info = await asyncio.create_task(
+    agentB_info = asyncio.create_task(
         get_agent_info(
             agentID=convoInfo.participantB, 
             isUser=convoInfo.isParticipantUserB,
@@ -304,26 +304,40 @@ async def end_conversation(convoInfo: ConversationInfo):
         )
     )
 
+    await agentA_info, agentB_info, recent_messages
+
+    if not agentA_info.result():
+        raise HTTPException(status_code=400,
+            detail=f"Bad agent A id: {convoInfo.participantA}"
+        )
+    if not agentB_info.result():
+        raise HTTPException(status_code=400,
+            detail=f"Bad agent B id: {convoInfo.participantB}"
+        )
+
+
     convo_for_agentA = get_agent_perspective(convo_transcript=recent_messages,
                                               for_agent=convoInfo.participantA,
-                                              other_agent_name=agentB_info.username
+                                              other_agent_name=agentB_info.result().username
                                               )
     convo_for_agentB = get_agent_perspective(convo_transcript=recent_messages,
                                                 for_agent=convoInfo.participantB,
-                                                other_agent_name=agentA_info.username
+                                                other_agent_name=agentA_info.result().username
                                                 )
 
     # Make a prompt for each agent
-    prompt_for_agentA = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agentA, responder=agentA_info, otherAgent=agentB_info)
-    prompt_for_agentB = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agentB, responder=agentB_info, otherAgent=agentA_info)
+    prompt_for_agentA = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agentA, responder=agentA_info.result(), otherAgent=agentB_info.result())
+    prompt_for_agentB = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agentB, responder=agentB_info.result(), otherAgent=agentA_info.result())
 
     # Send both prompts to GPT to summarize
-    gpt_agentA = await asyncio.create_task(model.apredict(prompt_for_agentA))
-    gpt_agentB = await asyncio.create_task(model.apredict(prompt_for_agentB))
+    gpt_agentA = asyncio.create_task(model.apredict(prompt_for_agentA))
+    gpt_agentB = asyncio.create_task(model.apredict(prompt_for_agentB))
+
+    await gpt_agentA, gpt_agentB
 
     # Write both to correct Chroma collections
-    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantA, gpt_agentA))
-    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantB, gpt_agentB))
+    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantA, gpt_agentA.result()))
+    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantB, gpt_agentB.result()))
     return
 
 @agents.post('/api/agents/generatePersona', response_model=AgentDescriptionModel)
@@ -337,8 +351,8 @@ async def generate_agent(initInfo: InitAgentInfo):
         )
     await gpt
     # Send summary back to game-service
-    responseItem = AgentDescriptionModel(description=gpt.result())
-    return responseItem
+    response = gpt.result()
+    return response
 
 # TODO: Handle OpenAI rate limiting - 5 images per minute.
 @agents.post('/api/agents/generateAvatar')
