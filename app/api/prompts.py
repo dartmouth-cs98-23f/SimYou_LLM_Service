@@ -1,7 +1,74 @@
 from .models import AgentInfo
 from typing import List, Tuple
+from .prompts import convo_prompt_with_recent_mems, convo_prompt_no_recent_mems
 
 class Prompts:
+    def convo_prompt_with_recent_mems(message: str, responderInfo: AgentInfo, askerInfo: AgentInfo, relevant_mems: str, recentMems: List[Tuple[str, str]])->str:
+        recent_mems = ""
+        for i in range(len(recentMems)):
+            recent_mems += f"({recentMems[i][0]} said: \"{recentMems[i][1]}\";\n"
+            
+        # Create the GPT prompt
+        gpt_prompt = f"""
+        You are a character with the name {responderInfo.username} this description:
+        \'{responderInfo.description}\'
+            
+        -----------------------------------------------------------------------------
+
+        You remember the following:
+        {relevant_mems}
+        -----------------------------------------------------------------------------
+
+        You are talking to another character with the name {askerInfo.username} who has this description:
+        \'{askerInfo.description}\'
+
+        -----------------------------------------------------------------------------
+            
+        This is what you have been talking about
+
+        {recent_mems}
+
+        ...
+
+        {askerInfo.username} says this to you:
+        \"{message}\" 
+            
+        -----------------------------------------------------------------------------
+
+        Please reply in a concise and conversational manner!
+
+        You say to {askerInfo.username}:
+        """
+        return gpt_prompt
+    
+    def convo_prompt_no_recent_mems(message: str, responderInfo: AgentInfo, askerInfo: AgentInfo, relevant_mems: str)->str:
+        gpt_prompt = f"""
+        You are a character with the name {responderInfo.username} this description:
+        \'{responderInfo.description}\'
+            
+        -----------------------------------------------------------------------------
+
+        You remember the following:
+        {relevant_mems}
+        -----------------------------------------------------------------------------
+
+        You are talking to another character with the name {askerInfo.username} who has this description:
+        \'{askerInfo.description}\'
+
+        -----------------------------------------------------------------------------
+
+        {askerInfo.username} says this to you:
+        \"{message}\" 
+            
+        -----------------------------------------------------------------------------
+
+        Please reply in a concise and conversational manner!
+
+        You say to {askerInfo.username}:
+        """
+        return gpt_prompt
+
+
     def get_convo_prompt(message: str, responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems: List[str], recentMems: List[Tuple[str, str]]):
         """
         This function generates a conversation prompt for a GPT model using the given parameters.
@@ -15,44 +82,13 @@ class Prompts:
         relevant_mems = ""
         for i in range(len(relevantMems)):
             relevant_mems += f"({i+1}) {relevantMems[i]};\n"
+
+        if recentMems:
+            return convo_prompt_with_recent_mems(message, responderInfo, askerInfo, relevant_mems, recentMems)
+        else:
+            return convo_prompt_no_recent_mems(message, responderInfo, askerInfo, relevant_mems)
+
         
-        #TODO: Assemble the recent memory from the list of chat summaries
-        recent_mems = ""
-        for i in range(len(recentMems)):
-            recent_mems += f"({recentMems[i][0]} said: \"{recentMems[i][1]}\";\n"
-        
-        # Create the GPT prompt
-        gpt_prompt = f"""
-        You are a character with the name {responderInfo.username} this description:
-        \'{responderInfo.description}\'
-        
-        -----------------------------------------------------------------------------
-
-        You remember the following:
-        {relevant_mems}
-        -----------------------------------------------------------------------------
-
-        You are talking to another character with the name {askerInfo.username} who has this description:
-        \'{askerInfo.description}\'
-
-        -----------------------------------------------------------------------------
-        
-        This is what you have been talking about
-
-        {recent_mems}
-
-        ...
-
-        {askerInfo.username} says this to you:
-        \"{message}\" 
-        
-        -----------------------------------------------------------------------------
-
-        Please reply in a concise and conversational manner!
-
-        You say to {askerInfo.username}:
-        """
-        return gpt_prompt
 
     def get_world_thumbnail_prompt(worldDescription: str):
         """
@@ -113,39 +149,62 @@ class Prompts:
             for i in range(len(relevantMems)):
                 relevant_mems += f"({i+1}) {relevantMems[i]};\n"
         
-        # TODO: Assemble the recent memory from the list of chat summaries
         recent_mems = ""
         if recentMems:
             for i in range(len(recentMems)):
                 recent_mems += f"({recentMems[i][0]} said: \"{recentMems[i][1]}\";\n"
         
-        # Create the GPT prompt
-        gpt_prompt = f"""
-        You are a character with the name {responderInfo.username} with this description:
-        \'{responderInfo.description}\'
+            # Create the GPT prompt
+            gpt_prompt = f"""
+            You are a character with the name {responderInfo.username} with this description:
+            \'{responderInfo.description}\'
 
-        -----------------------------------------------------------------------------
+            -----------------------------------------------------------------------------
+            
+            You remember the following:
+            {relevant_mems}
+            
+            -----------------------------------------------------------------------------
+
+            You are talking to another character with the name {askerInfo.username} who has this description:
+            \'{askerInfo.description}\'
+
+            -----------------------------------------------------------------------------
+            
+            This is what you have been talking about
+            {recent_mems}
+
+            -----------------------------------------------------------------------------
+
+            Based on your understanding of {askerInfo.username}, what question would you ask them?
+            
+            You ask {askerInfo.username}:
+            """
+            return gpt_prompt
         
-        You remember the following:
-        {relevant_mems}
-        
-        -----------------------------------------------------------------------------
+        else:
+            gpt_prompt = f"""
+            You are a character with the name {responderInfo.username} with this description:
+            \'{responderInfo.description}\'
 
-        You are talking to another character with the name {askerInfo.username} who has this description:
-        \'{askerInfo.description}\'
+            -----------------------------------------------------------------------------
+            
+            You remember the following:
+            {relevant_mems}
+            
+            -----------------------------------------------------------------------------
 
-        -----------------------------------------------------------------------------
-        
-        This is what you have been talking about
-        {recent_mems}
+            You are talking to another character with the name {askerInfo.username} who has this description:
+            \'{askerInfo.description}\'
 
-        -----------------------------------------------------------------------------
+            -----------------------------------------------------------------------------
 
-        Based on your understanding of {askerInfo.username}, what question would you ask them?
-        
-        You say to {askerInfo.username}:
-        """
-        return gpt_prompt
+            Based on your understanding of {askerInfo.username}, what question would you ask them?
+            
+            You ask {askerInfo.username}:
+            """
+            return gpt_prompt
+
     
     def get_convo_summary_prompt(convo_transcript:str, responder:AgentInfo, otherAgent:AgentInfo) -> str:
         """

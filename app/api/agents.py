@@ -148,19 +148,23 @@ async def prompt_agent(prompt: PromptInfo):
         raise HTTPException(status_code=400,
             detail=f"Bad target agent id: {prompt.recipientId}"
         )
-    if recent_mems.result() != [] and not recent_mems.result():
-        raise HTTPException(status_code=400,
-            detail=f"Bad conversation id: {prompt.conversationId}"
+    if recent_mems.result() == [] or not recent_mems.result():
+        gpt_prompt = Prompts.get_convo_prompt(
+            prompt.content,
+            responder_info.result(),
+            sender_info.result(),
+            None,
+            relevant_mems.result()
         )
-
-    # Generate a prompt for the GPT model using the results of the tasks
-    gpt_prompt = Prompts.get_convo_prompt(
-        prompt.content,
-        responder_info.result(),
-        sender_info.result(),
-        recent_mems.result(),
-        relevant_mems.result()
-    )
+    else:
+        # Generate a prompt for the GPT model using the results of the tasks
+        gpt_prompt = Prompts.get_convo_prompt(
+            prompt.content,
+            responder_info.result(),
+            sender_info.result(),
+            recent_mems.result(),
+            relevant_mems.result()
+        )
 
     # If the response should be streamed, return a StreamingResponse
     if prompt.streamResponse:
@@ -235,12 +239,23 @@ async def question_agent(questionInfo: QuestionInfo):
         agent_id=questionInfo.recipientId,
         prompt=chroma_prompt
     )
-    gpt_prompt = Prompts.get_question_prompt(
-        responder_info.result(),
-        sender_info.result(),
-        relevant_mems,
-        recent_mems.result(),
-    )
+
+    await recent_mems
+
+    if recent_mems.result() == [] or not recent_mems.result():
+        gpt_prompt = Prompts.get_question_prompt(
+            responder_info.result(),
+            sender_info.result(),
+            relevant_mems,
+            None,
+        )
+    else:
+        gpt_prompt = Prompts.get_question_prompt(
+            responder_info.result(),
+            sender_info.result(),
+            relevant_mems,
+            recent_mems.result(),
+        )
 
     # If the response should be streamed, return a StreamingResponse
     if questionInfo.streamResponse:
