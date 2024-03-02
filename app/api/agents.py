@@ -100,13 +100,14 @@ async def prompt_agent(prompt: PromptInfo):
     PromptResponse: a json argument of {response: str}
     """
     
-    if prompt.conversationId:
-        recent_mems = asyncio.create_task(get_recent_messages(
-            game_db_name=game_db_name,
-            game_db_user=game_db_user,
-            game_db_pass=game_db_pass,
-            game_db_url=game_db_url,
-            conversationID=prompt.conversationId))
+    recent_mems = asyncio.create_task(get_recent_messages(
+        game_db_name=game_db_name,
+        game_db_user=game_db_user,
+        game_db_pass=game_db_pass,
+        game_db_url=game_db_url,
+        conversationID=prompt.conversationId
+        )
+    )
     
     relevant_mems = asyncio.create_task(
         chroma_manager.retrieve_relevant_memories(
@@ -134,10 +135,7 @@ async def prompt_agent(prompt: PromptInfo):
             game_db_pass=game_db_pass
         )
     )
-    await relevant_mems, sender_info, responder_info
-    
-    if prompt.conversationId:
-        await recent_mems
+    await sender_info, responder_info        
 
     # Raise HTTPException if any of the tasks return None
     if not sender_info.result():
@@ -148,6 +146,8 @@ async def prompt_agent(prompt: PromptInfo):
         raise HTTPException(status_code=400,
             detail=f"Bad target agent id: {prompt.recipientId}"
         )
+    
+    await recent_mems, relevant_mems
     if recent_mems.result() == [] or not recent_mems.result():
         gpt_prompt = Prompts.get_convo_prompt(
             prompt.content,
@@ -215,9 +215,8 @@ async def question_agent(questionInfo: QuestionInfo):
             game_db_pass=game_db_pass
         )
     )
+
     await sender_info, responder_info
-    if questionInfo.conversationId:
-        await recent_mems
 
     # Raise HTTPException if any of the tasks return None
     if not sender_info.result():
