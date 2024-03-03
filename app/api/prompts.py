@@ -97,7 +97,7 @@ class Prompts:
         """
         return dall_e_prompt
     
-    def get_agent_persona_prompt(questions: List[str], answers: List[List[str]]):
+    def get_agent_persona_prompt(name: str, questions: List[str], answers: List[List[str]]):
         """
         This function generates a persona prompt for an AI model using the given questions and answers.
         
@@ -111,8 +111,8 @@ class Prompts:
 
         # Initialize the prompt string
         prompt = f"""
-        You are an expert at synthesizing details about a character into detailed descriptions. 
-        A character filled out the following survey to answer questions about themself:\n"""
+        You are an expert at synthesizing details about a characters into detailed descriptions. 
+        A character named {name} filled out the following survey to answer questions about themself:\n"""
 
         # Iterate over the questions and answers
         for question, answer_list in zip(questions, answers):
@@ -121,7 +121,7 @@ class Prompts:
                 prompt += f"\"{question}\": \"{answer}\"\n"
 
         # Add the instruction to generate more details
-        prompt += "\nBased on the above information, generate a cohesive and thorough summary of the character."
+        prompt += "\nBased on the above information, generate a concise and cohesive summary for {name}:"
 
         return prompt
     
@@ -170,7 +170,7 @@ class Prompts:
 
             -----------------------------------------------------------------------------
 
-            Based on your understanding of {askerInfo.username}, what question would you ask them?
+            Based on your understanding of {askerInfo.username}, propose a question brings up a new subject and will lead to an interesting conversation.
             
             You ask {askerInfo.username}:
             """

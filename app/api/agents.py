@@ -330,21 +330,18 @@ async def end_conversation(convoInfo: ConversationInfo):
     prompt_for_agentB = Prompts.get_convo_summary_prompt(convo_transcript=convo_for_agentB, responder=agentB_info.result(), otherAgent=agentA_info.result())
 
     # Send both prompts to GPT to summarize
-    gpt_agentA = asyncio.create_task(model.apredict(prompt_for_agentA))
-    gpt_agentB = asyncio.create_task(model.apredict(prompt_for_agentB))
-
-    await gpt_agentA, gpt_agentB
+    gpt_agentA = await asyncio.create_task(model.apredict(prompt_for_agentA))
+    gpt_agentB = await asyncio.create_task(model.apredict(prompt_for_agentB))
 
     # Write both to correct Chroma collections
-    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantA, gpt_agentA.result()))
-    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantB, gpt_agentB.result()))
+    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantA, gpt_agentA))
+    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantB, gpt_agentB))
     return
 
-@agents.post('/api/agents/generatePersona', response_model=AgentDescriptionModel)
+@agents.post('/api/agents/generatePersona')
 async def generate_agent(initInfo: InitAgentInfo):
-    # TODO: initialize a vector store for this agent...
     # Put all of responses into a prompt (could play around with doing summaries of summaries)
-    gpt_prompt = Prompts.get_agent_persona_prompt(initInfo.questions, initInfo.answers)
+    gpt_prompt = Prompts.get_agent_persona_prompt(initInfo.name, initInfo.questions, initInfo.answers)
     # Send to GPT
     gpt = asyncio.create_task(
             model.apredict(gpt_prompt)
@@ -372,9 +369,9 @@ async def generate_avatar(avatarInfo: GenerateAvatarInfo):
 
     # Crop for headshot
     headshot_img = Image.open(BytesIO(avatar_bytes))
-    headshot_img.crop((50, 0, 150, 100))
+    cropped_headshot = headshot_img.crop((50, 0, headshot_img.width - 50, headshot_img.height - 100))
     headshot_in_mem = BytesIO()
-    headshot_img.save(headshot_in_mem, "PNG")
+    cropped_headshot.save(headshot_in_mem, "PNG")
 
     # Build file names
     avatar_file_name = "avatars/agents/" + str(uuid.uuid1()) + ".png"
@@ -416,7 +413,6 @@ async def streaming_request(prompt: str) -> AsyncIterable[str]:
     finally:
         callback.done.set()
     await task
-
 
 
 @retry_with_exponential_backoff

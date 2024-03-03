@@ -92,7 +92,7 @@
 - `POST /api/agents/generatePersona`
   ```json
   {
-    "characterId": "00000000-0000-0000-0000-000000000000",
+    "name": "testname",
     "questions": [
       "question 1",
       "question 2",
