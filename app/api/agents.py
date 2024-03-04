@@ -369,13 +369,13 @@ async def generate_avatar(avatarInfo: GenerateAvatarInfo):
 
     # Crop for headshot
     headshot_img = Image.open(BytesIO(avatar_bytes))
-    cropped_headshot = headshot_img.crop((50, 0, headshot_img.width - 50, headshot_img.height - 100))
+    cropped_headshot = headshot_img.crop((50, 0, headshot_img.width - 50, headshot_img.height - 150))
     headshot_in_mem = BytesIO()
     cropped_headshot.save(headshot_in_mem, "PNG")
 
     # Build file names
-    avatar_file_name = "avatars/agents/" + str(uuid.uuid1()) + ".png"
-    headshot_file_name = "headshots/agents/" + str(uuid.uuid1()) + "-headshot.png"
+    avatar_file_name = "avatars/" + str(uuid.uuid1()) + ".png"
+    headshot_file_name = "headshots/" + str(uuid.uuid1()) + ".png"
 
     # Put images in S3 bucket
     obj = s3.Object(bucket_name, avatar_file_name)

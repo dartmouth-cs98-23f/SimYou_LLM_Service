@@ -223,8 +223,12 @@ class Prompts:
     
     def get_avatar_prompt(appearanceDescription: str):
         dall_e_prompt = f"""
-        Create a pixel art image for a retro video game character that is front-facing, full-body, standing in a wide stance, and looks as follows: {appearanceDescription}
+        Create a pixel art image for a retro video game character that is front-facing, standing in a wide stance, and looks as follows: {appearanceDescription}
         
         Make sure that the background is a solid color that can be easily removed.
+        
+        In addition, ensure that there is space between the character and the edges of the image.
+        
+        The image inlude only the character and should show the entire body.
         """
         return dall_e_prompt
