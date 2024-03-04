@@ -32,7 +32,7 @@ from .memory.conversation_retrieval import get_recent_messages, get_agent_perspe
 
 from .helpers.backoff_retry import retry_with_exponential_backoff
 
-from openai import OpenAI
+from openai import OpenAI, BadRequestError
 import base64
 import boto3
 import rembg
@@ -354,11 +354,8 @@ async def generate_agent(initInfo: InitAgentInfo):
 # TODO: Handle OpenAI rate limiting - 5 images per minute.
 @agents.post('/api/agents/generateAvatar')
 async def generate_avatar(avatarInfo: GenerateAvatarInfo):
-     # Get prompt for generating the thumbnail
-    prompt = Prompts.get_avatar_prompt(avatarInfo.appearanceDescription)
-
     # Generate image using OpenAI's DALL-E model
-    response = generate_avatar_with_retries(prompt)
+    response = generate_avatar_with_retries(avatarInfo.appearanceDescription)
 
     # Decode image
     image_bytes = base64.b64decode(response.data[0].b64_json)
@@ -416,13 +413,30 @@ async def streaming_request(prompt: str) -> AsyncIterable[str]:
 
 
 @retry_with_exponential_backoff
-def generate_avatar_with_retries(prompt):
-    response = client.images.generate(
-        model="dall-e-2",
-        prompt=prompt,
-        size="256x256",
-        quality="standard",
-        n=1,
-        response_format="b64_json",
-    )
-    return response
+def generate_avatar_with_retries(description):
+    response = None
+    try:
+        # Get prompt for generating the thumbnail
+        prompt = Prompts.get_avatar_prompt(description)
+        response = client.images.generate(
+            model="dall-e-2",
+            prompt=prompt,
+            size="256x256",
+            quality="standard",
+            n=1,
+            response_format="b64_json",
+        )
+    except (BadRequestError):
+        new_description = "Batman with rainbow suit"
+        prompt = Prompts.get_avatar_prompt(new_description)
+        response = client.images.generate(
+            model="dall-e-2",
+            prompt=prompt,
+            size="256x256",
+            quality="standard",
+            n=1,
+            response_format="b64_json",
+        )
+    finally:
+        if response:
+            return response

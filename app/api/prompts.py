@@ -93,7 +93,8 @@ class Prompts:
         """
         
         dall_e_prompt = f"""
-        Create a pixel art thumbnail image of a retro video game world described as: {worldDescription}
+        Generate a LIGHT-COLORED, SIMPLE, highly PIXELATED, RETRO-style thumbnail that looks like a planet for the world with the following description: 
+        {worldDescription}
         """
         return dall_e_prompt
     
