@@ -52,7 +52,7 @@ chroma_manager = ChromaClientWrapper(chroma_client)
 
 secret_key = os.getenv("OPENAI_API_KEY")
 model = ChatOpenAI(
-    streaming=True,
+    streaming=False,
     verbose=True,
     openai_api_key=secret_key
 )
@@ -192,7 +192,6 @@ async def question_agent(questionInfo: QuestionInfo):
             game_db_pass=game_db_pass,
             game_db_url=game_db_url,
             conversationID=questionInfo.conversationId))
-        # questionInfo.recipientId
     
     sender_info = asyncio.create_task(
         get_agent_info(
@@ -258,20 +257,22 @@ async def question_agent(questionInfo: QuestionInfo):
         )
 
     # If the response should be streamed, return a StreamingResponse
-    if questionInfo.streamResponse:
-        # TODO: Can we return this in a json?
-        return StreamingResponse(
-            streaming_request(gpt_prompt),
-            media_type="text/event-stream",
-        )
-    else:
-        # Otherwise, create a task to generate a response from the GPT model and return the result
-        gpt = asyncio.create_task(
-            model.apredict(gpt_prompt)
-        )
-        await gpt
-        response = gpt.result()
-        return response
+    # if questionInfo.streamResponse:
+    #     # TODO: Can we return this in a json?
+    #     return StreamingResponse(
+    #         streaming_request(gpt_prompt),
+    #         media_type="text/event-stream",
+    #     )
+    # else:
+    # Otherwise, create a task to generate a response from the GPT model and return the result
+    gpt = asyncio.create_task(
+        model.apredict(gpt_prompt)
+    )
+    await gpt
+
+    response = gpt.result()
+
+    return response
 
 @agents.post('/api/agents/endConversation')
 async def end_conversation(convoInfo: ConversationInfo):
@@ -334,8 +335,10 @@ async def end_conversation(convoInfo: ConversationInfo):
     gpt_agentB = await asyncio.create_task(model.apredict(prompt_for_agentB))
 
     # Write both to correct Chroma collections
-    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantA, gpt_agentA))
-    await asyncio.create_task(chroma_manager.add_memory(convoInfo.participantB, gpt_agentB))
+    chroma_task_a = asyncio.create_task(chroma_manager.add_memory(convoInfo.participantA, gpt_agentA))
+    chroma_task_b = asyncio.create_task(chroma_manager.add_memory(convoInfo.participantB, gpt_agentB))
+    await chroma_task_a
+    await chroma_task_b
     return
 
 @agents.post('/api/agents/generatePersona')
@@ -361,12 +364,17 @@ async def generate_avatar(avatarInfo: GenerateAvatarInfo):
     image_bytes = base64.b64decode(response.data[0].b64_json)
 
     # Remove image background
-    # TODO: Do this asynchronously
     avatar_bytes = rembg.remove(image_bytes)
 
+    # resize...
+    img = Image.open(BytesIO(avatar_bytes))
+    resized_img = img.resize((256, 256))
+    body_in_mem = BytesIO()
+    resized_img.save(body_in_mem, 'PNG')
+
     # Crop for headshot
-    headshot_img = Image.open(BytesIO(avatar_bytes))
-    cropped_headshot = headshot_img.crop((50, 0, headshot_img.width - 50, headshot_img.height - 150))
+    # headshot_img = Image.open(BytesIO(avatar_bytes))
+    cropped_headshot = resized_img.crop((50, 0, resized_img.width - 50, resized_img.height - 150))
     headshot_in_mem = BytesIO()
     cropped_headshot.save(headshot_in_mem, "PNG")
 
@@ -376,7 +384,7 @@ async def generate_avatar(avatarInfo: GenerateAvatarInfo):
 
     # Put images in S3 bucket
     obj = s3.Object(bucket_name, avatar_file_name)
-    obj.put(Body=avatar_bytes)
+    obj.put(Body=body_in_mem.getvalue())
     obj = s3.Object(bucket_name, headshot_file_name)
     obj.put(Body=headshot_in_mem.getvalue())
 
@@ -419,23 +427,23 @@ def generate_avatar_with_retries(description):
         # Get prompt for generating the thumbnail
         prompt = Prompts.get_avatar_prompt(description)
         response = client.images.generate(
-            model="dall-e-2",
+            model="dall-e-3",
             prompt=prompt,
-            size="256x256",
-            quality="standard",
+            size="1024x1024",
+            quality="hd",
             n=1,
-            response_format="b64_json",
+            response_format="b64_json"
         )
     except (BadRequestError):
         new_description = "Batman with rainbow suit"
         prompt = Prompts.get_avatar_prompt(new_description)
         response = client.images.generate(
-            model="dall-e-2",
+            model="dall-e-3",
             prompt=prompt,
-            size="256x256",
-            quality="standard",
+            size="1024x1024",
+            quality="hd",
             n=1,
-            response_format="b64_json",
+            response_format="b64_json"
         )
     finally:
         if response:

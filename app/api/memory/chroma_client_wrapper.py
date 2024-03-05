@@ -62,7 +62,6 @@ class ChromaClientWrapper:
                 metadatas=[{'last-touched':str(now)}]
             )
         except ValueError as e:
-            #TODO: Figure out a better way to handle this
             return
 
         
