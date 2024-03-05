@@ -116,6 +116,7 @@ async def prompt_agent(prompt: PromptInfo):
             prompt=prompt.content
         )
     )
+
     sender_info = asyncio.create_task(
         get_agent_info(
             prompt.senderId, 
@@ -235,12 +236,16 @@ async def question_agent(questionInfo: QuestionInfo):
         None,
         None,
     )
-    relevant_mems = chroma_manager.retrieve_relevant_memories(
+    relevant_mems = asyncio.create_task(
+        chroma_manager.retrieve_relevant_memories(
         agent_id=questionInfo.recipientId,
         prompt=chroma_prompt
+        )
     )
 
-    await recent_mems
+    if questionInfo.conversationId:
+        await recent_mems
+    await relevant_mems
 
     if recent_mems.result() == [] or not recent_mems.result():
         gpt_prompt = Prompts.get_question_prompt(
