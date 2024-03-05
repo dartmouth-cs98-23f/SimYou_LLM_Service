@@ -1,7 +1,12 @@
 from typing import List
 import psycopg2
 
-async def get_recent_messages(game_db_name, game_db_user, game_db_pass, game_db_url, conversationID, num_popped = 10) -> List[str]:
+async def get_recent_messages(game_db_name, 
+                              game_db_user, 
+                              game_db_pass, 
+                              game_db_url, 
+                              conversationID, 
+                              num_popped = 10) -> List[str]:
     '''
     This function connects to a PostgreSQL database and retrieves the recent messages from a conversation.
     

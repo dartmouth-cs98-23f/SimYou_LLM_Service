@@ -3,7 +3,11 @@ from typing import List, Tuple
 
 class Prompts:
         
-    def get_convo_prompt(message: str, responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems: List[str], recentMems: List[Tuple[str, str]]):
+    def get_convo_prompt(message: str, 
+                         responderInfo: AgentInfo, 
+                         askerInfo: AgentInfo, 
+                         relevantMems: List[str], 
+                         recentMems: List[Tuple[str, str]]):
         """
         This function generates a conversation prompt for a GPT model using the given parameters.
         
@@ -24,18 +28,18 @@ class Prompts:
                 
             # Create the GPT prompt
             gpt_prompt = f"""
-            You are a character with the name {responderInfo.username} this description:
+            You are a character with the name {responderInfo.username} and this description:
             \'{responderInfo.description}\'
                 
-            -----------------------------------------------------------------------------
-
-            You remember the following:
-            {relevant_mems}
             -----------------------------------------------------------------------------
 
             You are talking to another character with the name {askerInfo.username} who has this description:
             \'{askerInfo.description}\'
 
+            -----------------------------------------------------------------------------
+
+            You remember the following:
+            {relevant_mems}
             -----------------------------------------------------------------------------
                 
             This is what you have been talking about
@@ -49,15 +53,15 @@ class Prompts:
                 
             -----------------------------------------------------------------------------
 
-            Please reply in a concise and conversational manner!
-
+            Reply in a concise and conversational manner according to the context of the conversation
+            and the description of your character.
             You say to {askerInfo.username}:
             """
             return gpt_prompt
         
         else:
             gpt_prompt = f"""
-            You are a character with the name {responderInfo.username} this description:
+            You are a character with the name {responderInfo.username} and this description:
             \'{responderInfo.description}\'
                 
             -----------------------------------------------------------------------------
@@ -76,13 +80,43 @@ class Prompts:
                 
             -----------------------------------------------------------------------------
 
-            Please reply in a concise and conversational manner!
+            Reply in a concise and conversational manner according to the context of the conversation
+            and the description of your character.
 
             You say to {askerInfo.username}:
             """
             return gpt_prompt
 
         
+    def get_chat_completion_system_prompt(responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems: List[str]):
+        relevant_mems = ""
+        for i in range(len(relevantMems)):
+            relevant_mems += f"({i+1}) {relevantMems[i]};\n"
+
+        system_prompt = f"""
+            You are a character with the name {responderInfo.username} and this description:
+            \'{responderInfo.description}\'
+                
+            -----------------------------------------------------------------------------
+
+            You are talking to another character with the name {askerInfo.username} who has this description:
+            \'{askerInfo.description}\'
+
+            -----------------------------------------------------------------------------
+
+            You remember the following:
+            {relevant_mems}
+
+            -----------------------------------------------------------------------------
+
+            Reply in a concise and conversational manner according to the context of the conversation
+            and the description of your character.
+
+            You say to {askerInfo.username}:
+            """
+        
+        return system_prompt
+
 
     def get_world_thumbnail_prompt(worldDescription: str):
         """
@@ -126,7 +160,10 @@ class Prompts:
 
         return prompt
     
-    def get_question_prompt(responderInfo: AgentInfo, askerInfo: AgentInfo, relevantMems: List[str], recentMems: List[Tuple[str, str]]):
+    def get_question_prompt(responderInfo: AgentInfo, 
+                            askerInfo: AgentInfo, 
+                            relevantMems: List[str], 
+                            recentMems: List[Tuple[str, str]]):
         """
         This function generates a question prompt for an AI model using the given responder and asker agent information.
         Generates a question prompt for an AI model using given responder and asker agent information, and optionally, 
@@ -151,19 +188,19 @@ class Prompts:
         
             # Create the GPT prompt
             gpt_prompt = f"""
-            You are a character with the name {responderInfo.username} with this description:
+            You are a character with the name {responderInfo.username} and this description:
             \'{responderInfo.description}\'
 
-            -----------------------------------------------------------------------------
-            
-            You remember the following:
-            {relevant_mems}
-            
             -----------------------------------------------------------------------------
 
             You are talking to another character with the name {askerInfo.username} who has this description:
             \'{askerInfo.description}\'
 
+            -----------------------------------------------------------------------------
+
+            You remember the following:
+            {relevant_mems}
+            
             -----------------------------------------------------------------------------
             
             This is what you have been talking about
@@ -171,7 +208,8 @@ class Prompts:
 
             -----------------------------------------------------------------------------
 
-            Based on your understanding of {askerInfo.username}, propose a question brings up a new subject and will lead to an interesting conversation.
+            Based on your understanding of {askerInfo.username} and your own interests, propose a question 
+            brings up a new subject and will lead to an interesting conversation.
             
             You ask {askerInfo.username}:
             """
@@ -194,11 +232,54 @@ class Prompts:
 
             -----------------------------------------------------------------------------
 
-            Based on your understanding of {askerInfo.username}, what question would you ask them?
+            Based on your understanding of {askerInfo.username} and your own interests, propose a question 
+            brings up a new subject and will lead to an interesting conversation.
             
             You ask {askerInfo.username}:
             """
             return gpt_prompt
+        
+    def get_question_system_prompt(responderInfo: AgentInfo, 
+                            askerInfo: AgentInfo, 
+                            relevantMems: List[str]):
+        """
+        This function generates a question prompt for an AI model using the given responder and asker agent information.
+        Generates a question prompt for an AI model using given responder and asker agent information, and optionally, 
+        relevant and recent memories. The generated prompt includes details about the responder and asker agents, 
+        their recent conversation, and a request for the AI to generate a question that the responder would ask the asker.
+        
+        :param responderInfo: An instance of AgentInfo class representing the responder agent's information.
+        :param askerInfo: An instance of AgentInfo class representing the asker agent's information.
+        :param relevantMems: A list of relevant memories (optional).
+        :return: A string representing the generated question prompt.
+        """
+        relevant_mems = ""
+        if relevant_mems:
+            for i in range(len(relevantMems)):
+                relevant_mems += f"({i+1}) {relevantMems[i]};\n"
+            
+        system_prompt = f"""
+        You are a character with the name {responderInfo.username} and this description:
+        \'{responderInfo.description}\'
+
+        -----------------------------------------------------------------------------
+            
+        You remember the following:
+        {relevant_mems}
+            
+        -----------------------------------------------------------------------------
+
+        You are talking to another character with the name {askerInfo.username} who has this description:
+        \'{askerInfo.description}\'
+
+        -----------------------------------------------------------------------------
+
+        Based on your understanding of {askerInfo.username} and your own interests, propose a question 
+        brings up a new subject and will lead to an interesting conversation.
+            
+        You ask {askerInfo.username}:
+        """
+        return system_prompt
 
     
     def get_convo_summary_prompt(convo_transcript:str, responder:AgentInfo, otherAgent:AgentInfo) -> str:
@@ -224,12 +305,44 @@ class Prompts:
     
     def get_avatar_prompt(appearanceDescription: str):
         dall_e_prompt = f"""
-        Create a pixel art image for a retro video game character that is front-facing, standing in a wide stance, and looks as follows: {appearanceDescription}
+        Create an image of a character that looks as follows: {appearanceDescription}
+
+        Pixelate the details to give the character a classic feel. The character should be front-facing and standing in a wide stance,
         
         Make sure that the background is a solid color that can be easily removed.
         
-        In addition, ensure that there is space between the character and the edges of the image.
+        Make sure there is space between the character and the edges of the image.
         
-        The image inlude only the character and should show the entire body.
+        The image inlude only ONE intance of the character CENTERED in the image, and it should show the entire body.
         """
         return dall_e_prompt
+    
+    def combine_chats_and_system_prompt(system_prompt, 
+                                      convo_transcript, 
+                                      for_agent: str, 
+                                      for_agent_name: str,
+                                      other_agent_name: str) -> str:
+        '''
+        This function takes in a list of tuples, each containing a speaker and their message,
+        and returns a string representing the conversation from the perspective of the agent
+        specified by the for_agent parameter.
+
+        Parameters:
+        convo_transcript (List[Tuple[str, str]]): A list of tuples where each tuple contains a speaker ID and a message.
+        for_agent (str): The ID of the agent for whom the perspective is to be generated.
+        other_agent_name (str): The name of the other agent in the conversation.
+
+        Returns:
+        A list of dictionaries, where each dictionary contains the role of the speaker and their message. Prompt returned
+        is ready to be fed to chatgpt.
+        '''
+
+        convo = []
+        convo.append({"role": "system", "content": system_prompt})
+        for thing_said in convo_transcript:
+            if thing_said[0] == for_agent:
+                convo.append({"role": "agent", "name": for_agent_name, "content": thing_said[1]})
+            else:
+                convo.append({"role": "user", "name": other_agent_name, "content": thing_said[1]})
+
+        return convo

@@ -8,6 +8,9 @@ from openai import OpenAI
 import base64
 import boto3
 import uuid
+from PIL import Image
+from io import BytesIO
+
 from .helpers.backoff_retry import retry_with_exponential_backoff
 
 # Load environment variables
@@ -48,12 +51,19 @@ def add_thumbnail(thumbnailInfo: ThumbnailInfo):
     # Generate image using OpenAI's DALL-E model
     response = generate_thumbnail_with_retries(prompt)
 
+    # Resize
+    image_bytes = base64.b64decode(response.data[0].b64_json)
+    img = Image.open(BytesIO(image_bytes))
+    resized_img = img.resize((256, 256))
+    img_in_mem = BytesIO()
+    resized_img.save(img_in_mem, 'JPEG')
+
     # Build file name
     file_name = "thumbnails/" + thumbnailInfo.worldID + ".jpeg"
 
     # Put image in S3 bucket
     obj = s3.Object(bucket_name, file_name)
-    obj.put(Body=base64.b64decode(response.data[0].b64_json))
+    obj.put(Body=img_in_mem.getvalue())
 
     # Get bucket location
     location = boto3.client('s3').get_bucket_location(Bucket=bucket_name)['LocationConstraint']
@@ -67,9 +77,9 @@ def add_thumbnail(thumbnailInfo: ThumbnailInfo):
 @retry_with_exponential_backoff
 def generate_thumbnail_with_retries(prompt):
     response = client.images.generate(
-        model="dall-e-2",
+        model="dall-e-3",
         prompt=prompt,
-        size="256x256",
+        size="1024x1024",
         quality="standard",
         n=1,
         response_format="b64_json",
