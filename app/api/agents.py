@@ -20,6 +20,7 @@ from .request_models.DescribeAgentRequest import InitAgentInfo
 from .request_models.EndConvoRequest import ConversationInfo
 from .request_models.PromptRequest import PromptInfo
 from .request_models.GenerateAvatarRequest import GenerateAvatarInfo
+from .request_models.UpdateUserSummary import UserSummaryInfo
 
 from .response_models.generateAgentResponse import AgentDescriptionModel
 from .response_models.promptResponse import PromptResponse
@@ -27,7 +28,7 @@ from .response_models.promptResponse import PromptResponse
 from .memory.chroma_client_wrapper import ChromaClientWrapper
 from .prompts import Prompts
 
-from .memory.agent_retrieval import get_agent_info
+from .memory.agent_retrieval import get_agent_info, update_user_summary
 from .memory.conversation_retrieval import get_recent_messages, get_agent_perspective
 
 from .helpers.backoff_retry import retry_with_exponential_backoff
@@ -398,6 +399,11 @@ async def generate_avatar(avatarInfo: GenerateAvatarInfo):
     response_obj = AvatarResponse(avatarURL=avatar_url, headshotURL=headshot_url)
     return response_obj
 
+
+@agents.post('/api/agents/updateUserSummary')
+def update_summary(info: UserSummaryInfo):
+    update_user_summary(info.userID, info.summary)
+    return
 
 # Stream response generator
 async def streaming_request(prompt: str) -> AsyncIterable[str]:

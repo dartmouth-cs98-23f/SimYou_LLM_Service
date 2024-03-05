@@ -32,7 +32,6 @@ class ChromaClientWrapper:
         second, ms = seconds.split(".")
         return datetime.datetime(int(year), int(month), int(day), int(hour), int(minute), int(second), int(ms))
 
-
     async def add_memory(self, agent_id: str, memory: str, unique_id=""):
         """
         Adds a memory to the collection belonging to the agent.
