@@ -68,3 +68,8 @@ async def get_agent_info(agentID, isUser, game_db_name, game_db_user, game_db_pa
         if results:
             agent_info_cache.put(agentID, AgentInfo(results[0], results[1]))
             return AgentInfo(results[0], results[1])
+
+def update_user_summary(userID, summary): 
+    if user_info_cache.get(userID) != -1:
+        curr_agent_info = user_info_cache.get(userID)
+        user_info_cache.put(userID, AgentInfo(username=curr_agent_info.username, summary=summary))
