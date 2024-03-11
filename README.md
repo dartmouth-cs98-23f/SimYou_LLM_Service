@@ -80,5 +80,5 @@ When finished, stop and remove the containers
 | POST | /api/agents/generate_agent | Given a list of survey questions and answers, generates an agent description |
 | POST | /api/agents/generateAvatar | Generate a sprite that matches the description of an agent |
 | POST | /api/agents/updateUserSummary | Update the user summary cache |
-
+| POST | /api/thumbnails | Get a thumbnail for a given description |
 
