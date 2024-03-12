@@ -48,7 +48,7 @@ Contains Pydantic models for the request bodies of the API.
 
 ## How to run
 
-Create a `.env` file in the project directory. Add your OpenAI API key and the IP address of the Chroma DB as the following:
+Create a `.env` file in the project directory. Add your OpenAI API key and the rest of the keys as the following:
 
 ```
 CHROMA_DB="1.23.45.678"
@@ -56,6 +56,9 @@ OPENAI_API_KEY="sk-EXAMPLE"
 GAME_DB_ADDRESS="blah-blah-blah.com"
 GAME_DB_PASS="password"
 GAME_DB_USER="user"
+GAME_DB_NAME="simudb-prod"
+AWS_ACCESS_KEY_ID="AKIA4MTWLE6QBV6GTJUG"
+AWS_SECRET_ACCESS_KEY="p0kkAPUw7W/uWhl1SDPNKEH1dkIp9e9eDdmYAwg0"
 ```
 
 If you haven't already, download [Docker](https://docs.docker.com/get-docker/)
@@ -67,18 +70,4 @@ Navigate to this [link](http://localhost:8000)
 
 When finished, stop and remove the containers
 `docker compose down`
-
-
-## API Endpoints (not up to date)
-| HTTP Verbs | Endpoints | Action |
-| --- | --- | --- |
-| POST | /api/agents/ | Create a new agent |
-| DELETE | /api/agents/ | Delete an agent |
-| POST | /api/agents/prompt | Prompt an agent |
-| POST | /api/agents/question_agent | Prompt an agent to ask you a question |
-| POST | /api/agents/endConservation | Notify agent that conversation is over so agent can summarize conversation and update their memory |
-| POST | /api/agents/generate_agent | Given a list of survey questions and answers, generates an agent description |
-| POST | /api/agents/generateAvatar | Generate a sprite that matches the description of an agent |
-| POST | /api/agents/updateUserSummary | Update the user summary cache |
-| POST | /api/thumbnails | Get a thumbnail for a given description |
 
