@@ -56,9 +56,9 @@ OPENAI_API_KEY="sk-EXAMPLE"
 GAME_DB_ADDRESS="blah-blah-blah.com"
 GAME_DB_PASS="password"
 GAME_DB_USER="user"
-GAME_DB_NAME="simudb-prod"
-AWS_ACCESS_KEY_ID="AKIA4MTWLE6QBV6GTJUG"
-AWS_SECRET_ACCESS_KEY="p0kkAPUw7W/uWhl1SDPNKEH1dkIp9e9eDdmYAwg0"
+GAME_DB_NAME="name"
+AWS_ACCESS_KEY_ID="EXAMPLEKEYID"
+AWS_SECRET_ACCESS_KEY="EXAMPLESECRETACCESSKEY"
 ```
 
 If you haven't already, download [Docker](https://docs.docker.com/get-docker/)
